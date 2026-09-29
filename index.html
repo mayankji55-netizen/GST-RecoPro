@@ -1,0 +1,2396 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>GST RecoPro — Secure GST 2B ⇄ Books Reconciliation</title>
+<script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"
+        onerror="this.onerror=null;var s=document.createElement('script');s.src='https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';document.head.appendChild(s);"></script>
+<style>
+  :root{
+    --navy:#1F4E78; --navy-dark:#153a5c; --ink:#1c2530; --muted:#6b7280;
+    --bg:#f5f7fa; --card:#ffffff; --line:#e2e6ec;
+    --yellow:#fff3cd; --blue:#e7f0fb; --green:#d7f2e0; --green-ink:#146c43;
+    --red:#fde2e2; --red-ink:#b42318; --orange:#fdecc8; --orange-ink:#96540a;
+    --amber:#fff0c2; --amber-ink:#7a5b00; --grey:#e9ecef;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;font-family:"Segoe UI",Arial,sans-serif;background:var(--bg);color:var(--ink);font-size:14px;}
+  header{background:var(--navy);color:#fff;padding:14px 22px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;}
+  header h1{font-size:18px;margin:0;font-weight:600;}
+  header .sub{font-size:12px;opacity:.85;margin-top:2px;}
+  nav{display:flex;background:var(--navy-dark);flex-wrap:wrap;}
+  nav button{background:none;border:none;color:#cfe0f0;padding:12px 18px;font-size:13.5px;cursor:pointer;border-bottom:3px solid transparent;}
+  nav button.active{color:#fff;border-bottom:3px solid #fff;background:rgba(255,255,255,.08);}
+  nav button:hover{color:#fff;}
+  main{max-width:1400px;margin:0 auto;padding:20px;}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:18px;margin-bottom:16px;}
+  .card h2{margin:0 0 4px 0;font-size:16px;color:var(--navy);}
+  .hint{color:var(--muted);font-size:12.5px;margin-bottom:12px;line-height:1.5;}
+  textarea{width:100%;min-height:110px;font-family:ui-monospace,Consolas,monospace;font-size:12.5px;padding:10px;border:1px solid var(--line);border-radius:6px;resize:vertical;}
+  .row{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:10px;}
+  button.btn{background:var(--navy);color:#fff;border:none;padding:9px 16px;border-radius:6px;font-size:13px;cursor:pointer;}
+  button.btn:hover{background:var(--navy-dark);}
+  button.btn.secondary{background:#fff;color:var(--navy);border:1px solid var(--navy);}
+  button.btn.danger{background:#fff;color:var(--red-ink);border:1px solid var(--red-ink);}
+  button.btn.small{padding:4px 10px;font-size:12px;}
+  select,input[type=month],input[type=text]{padding:7px 10px;border:1px solid var(--line);border-radius:6px;font-size:13px;}
+  table{border-collapse:collapse;width:100%;font-size:12.5px;}
+  th,td{border:1px solid var(--line);padding:6px 8px;text-align:right;white-space:nowrap;}
+  th{background:var(--navy);color:#fff;position:sticky;top:0;font-weight:600;text-align:center;}
+  /* Keep both the column headings AND the search/filter row visible while scrolling */
+  .table-wrap table thead tr:first-child th{position:sticky;top:0;z-index:6;background:var(--navy);}
+  .table-wrap table thead tr:nth-child(2) th{position:sticky;top:31px;z-index:5;background:var(--navy);}
+  .table-wrap table thead tr:nth-child(2) th .col-filter{position:relative;z-index:7;}
+  td.txt{text-align:left;}
+  tbody tr:nth-child(even){background:#fafbfd;}
+  .table-wrap{overflow:auto;max-height:520px;border:1px solid var(--line);border-radius:6px;}
+  .badge{display:inline-block;padding:3px 8px;border-radius:12px;font-size:11px;font-weight:600;}
+  .b-matched{background:var(--green);color:var(--green-ink);}
+  .b-notin{background:var(--red);color:var(--red-ink);}
+  .b-invno{background:var(--orange);color:var(--orange-ink);}
+  .b-amt{background:var(--amber);color:var(--amber-ink);}
+  .b-journal{background:var(--grey);color:#555;}
+  .b-tag{background:var(--blue);color:var(--navy);}
+  select.remark-select{font-size:11.5px;padding:3px 4px;max-width:130px;}
+  .summary-table td:first-child, .summary-table th:first-child{text-align:left;}
+  .summary-table tr.total td{font-weight:700;background:var(--blue);}
+  .summary-table tr.net td{font-weight:700;background:var(--green);}
+  .summary-table tr.diff td{font-weight:700;background:#fce4d6;}
+  .section-title{background:var(--navy-dark);color:#fff;padding:8px 12px;border-radius:6px;font-size:13px;font-weight:600;margin:18px 0 8px;}
+  .pill{display:inline-flex;align-items:center;gap:6px;padding:6px 12px;border-radius:20px;font-size:12.5px;font-weight:600;}
+  .pill.open{background:var(--blue);color:var(--navy);}
+  .pill.closed{background:var(--green);color:var(--green-ink);}
+  .manual-cell{background:var(--blue);}
+  .stat-cards{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:14px;}
+  .stat{flex:1;min-width:150px;background:#fff;border:1px solid var(--line);border-radius:8px;padding:12px 14px;}
+  .stat .k{font-size:11.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.03em;}
+  .stat .v{font-size:19px;font-weight:700;color:var(--navy);margin-top:3px;}
+  #fileBanner{padding:9px 22px;font-size:13px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;border-bottom:1px solid var(--line);}
+  #fileBanner.ok{background:#e3f6ea;color:#146c43;}
+  #fileBanner.warn{background:#fff0c2;color:#7a5b00;}
+  #fileBanner.err{background:#fde2e2;color:#b42318;}
+  #fileBanner .btn{padding:5px 12px;font-size:12px;}
+  footer{text-align:center;color:var(--muted);font-size:11.5px;padding:24px;}
+  .flex-between{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;}
+  .del-btn{background:none;border:none;color:var(--red-ink);cursor:pointer;font-size:14px;padding:0 4px;}
+  .toast{position:fixed;bottom:20px;right:20px;background:var(--ink);color:#fff;padding:10px 16px;border-radius:6px;font-size:13px;opacity:0;transition:opacity .3s;pointer-events:none;z-index:50;}
+  .toast.show{opacity:1;}
+  .locked-note{background:var(--amber);color:var(--amber-ink);padding:8px 12px;border-radius:6px;font-size:12.5px;margin-bottom:12px;}
+
+.trend-wrap{overflow-x:auto}.trend-chart{width:100%;min-width:760px}.trend-legend{display:flex;flex-wrap:wrap;gap:14px;margin:10px 0 4px;font-size:12px}.trend-legend span{display:inline-flex;align-items:center;gap:6px}.trend-dot{width:10px;height:10px;border-radius:2px;display:inline-block}.trend-table{width:100%;border-collapse:collapse;margin-top:12px;font-size:12px}.trend-table th,.trend-table td{padding:7px 9px;border-bottom:1px solid #e5e7eb;text-align:right;white-space:nowrap}.trend-table th:first-child,.trend-table td:first-child{text-align:left}.trend-note{font-size:12px;color:#64748b;margin-top:7px}
+.trend-line{fill:none;stroke-width:3}.trend-2b{stroke:#2563eb}.trend-books{stroke:#16a34a}.trend-diff{stroke:#dc2626;stroke-dasharray:7 5}.trend-pending{stroke:#f59e0b}.trend-p2b{fill:#2563eb}.trend-pbooks{fill:#16a34a}.trend-pdiff{fill:#dc2626}.trend-ppending{fill:#f59e0b}.trend-2b-dot{background:#2563eb}.trend-books-dot{background:#16a34a}.trend-diff-dot{background:#dc2626}.trend-pending-dot{background:#f59e0b}
+
+.bulk-check{width:16px;height:16px}.grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}@media(max-width:900px){.grid2{grid-template-columns:1fr}}.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.row input,.row select{padding:7px}.tools-table{width:100%;border-collapse:collapse;font-size:12px}.tools-table th,.tools-table td{border:1px solid #dbe3ee;padding:6px;text-align:left}.tools-table th{background:#1f4e78;color:#fff;position:sticky;top:0;font-weight:600}.tools-table th *{color:#fff}.suggest-good{background:#ecfdf5}.row-note-input{width:150px;min-width:120px;padding:5px 7px;border:1px solid #cbd5e1;border-radius:5px;font-size:12px}.muted-gstin{color:#64748b;font-size:11px}.suggest-row{display:flex;justify-content:space-between;gap:8px;padding:7px;border-bottom:1px solid #e5e7eb}
+
+  /* Premium login / home */
+  #authGate{position:fixed;inset:0;background:linear-gradient(135deg,#eef7ff 0%,#f8fbff 52%,#e9f3ff 100%);z-index:99999;display:flex;align-items:center;justify-content:center;padding:24px;overflow:auto}
+  #authGate:before{content:"";position:absolute;width:520px;height:520px;border-radius:50%;background:rgba(37,99,235,.08);left:-180px;top:-180px}
+  #authGate:after{content:"";position:absolute;width:420px;height:420px;border-radius:50%;background:rgba(16,185,129,.06);right:-160px;bottom:-180px}
+  .login-shell{position:relative;z-index:1;width:min(1180px,100%);min-height:650px;display:grid;grid-template-columns:1.15fr .85fr;background:rgba(255,255,255,.72);border:1px solid rgba(180,205,230,.75);border-radius:24px;box-shadow:0 28px 80px rgba(31,78,120,.18);overflow:hidden;backdrop-filter:blur(8px)}
+  .login-left{padding:54px 52px;display:flex;flex-direction:column;justify-content:center;position:relative;background:linear-gradient(145deg,rgba(255,255,255,.86),rgba(236,247,255,.72))}
+  .login-brand{display:flex;align-items:center;gap:14px}.login-logo{width:58px;height:58px;border-radius:15px;background:linear-gradient(145deg,#0f6bdc,#2f8cff);display:flex;align-items:center;justify-content:center;color:#fff;font-size:28px;font-weight:800;box-shadow:0 10px 25px rgba(37,99,235,.24)}
+  .login-brand h1{margin:0;color:#12345b;font-size:32px;line-height:1}.login-brand h1 span{color:#1677ef}.login-sub{font-size:15px;color:#47627e;margin-top:7px}.login-tag{display:inline-block;margin:34px 0 12px;padding-bottom:9px;border-bottom:3px solid #1677ef;color:#153a5c;font-weight:800;font-size:34px;line-height:1.12}.login-tag span{color:#1677ef}.login-desc{font-size:15px;color:#536b84;max-width:570px;line-height:1.55}
+  .login-features{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:28px;max-width:600px}.login-feature{background:rgba(255,255,255,.84);border:1px solid #dceaf7;border-radius:14px;padding:14px 15px;display:flex;gap:12px;align-items:center;box-shadow:0 8px 22px rgba(31,78,120,.06)}.login-feature .ico{width:42px;height:42px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:21px;background:#e7f1ff;color:#1677ef}.login-feature:nth-child(2) .ico{background:#e6faf3;color:#0eaa76}.login-feature:nth-child(3) .ico{background:#f0eaff;color:#6438d9}.login-feature:nth-child(4) .ico{background:#fff0df;color:#f47c20}.login-feature b{display:block;color:#163b67;font-size:13px}.login-feature small{display:block;color:#71839a;margin-top:3px;line-height:1.35}
+  .login-visual{position:absolute;right:10px;bottom:10px;width:290px;height:205px;opacity:.96}.sheet{position:absolute;background:#fff;border:1px solid #d6e6f5;border-radius:10px;box-shadow:0 16px 35px rgba(31,78,120,.13);padding:14px;width:135px}.sheet.one{left:10px;top:22px;transform:rotate(-6deg)}.sheet.two{right:10px;top:8px;transform:rotate(5deg)}.sheet b{font-size:18px;color:#1f4e78}.sheet .line{height:7px;background:#dfeaf5;border-radius:6px;margin-top:10px}.sheet .line:nth-child(3){width:75%}.laptop{position:absolute;left:62px;bottom:0;width:175px;height:105px;background:linear-gradient(145deg,#12345b,#28567e);border-radius:9px 9px 4px 4px;padding:7px;box-shadow:0 14px 28px rgba(31,78,120,.22)}.screen{height:100%;background:#f6fbff;border-radius:5px;padding:9px}.screen .bar{height:8px;background:#dceaf7;border-radius:4px;margin-bottom:7px}.screen .bar.blue{background:#4c94ed;width:70%}.screen .rows{display:grid;gap:5px}.screen .rows i{display:block;height:6px;background:#dce6ef;border-radius:4px}.login-right{padding:52px 48px;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,.68)}
+  #authGate .auth-card{width:min(430px,100%);background:#fff;border-radius:20px;padding:34px;box-shadow:0 18px 50px rgba(31,78,120,.13);border:1px solid #e2edf7}.auth-welcome{text-align:center;margin-bottom:24px}.auth-welcome h2{margin:0;color:#153a5c;font-size:27px}.auth-welcome h2 span{color:#1677ef}.auth-welcome p{margin:8px 0 0;color:#71839a;font-size:13px}.auth-field{margin:14px 0}.auth-field label{display:block;font-size:12px;font-weight:700;margin-bottom:6px;color:#29425d}.auth-field input,.auth-field select{width:100%;padding:12px 13px;border:1px solid #d5e1ed;border-radius:9px;font-size:14px;background:#fbfdff}.auth-field input:focus,.auth-field select:focus{outline:none;border-color:#3b8ff3;box-shadow:0 0 0 3px rgba(59,143,243,.11)}.auth-login-btn{width:100%;padding:12px 16px!important;border-radius:9px!important;background:linear-gradient(135deg,#1476ef,#318cf5)!important;box-shadow:0 10px 20px rgba(37,99,235,.18)}.auth-foot{text-align:center;margin-top:20px;color:#8a98a8;font-size:10.5px}.auth-error{color:#b42318;font-size:12px;min-height:18px;margin-top:8px}.app-userbar{display:flex;gap:8px;align-items:center}.app-userbar .role-pill{font-size:11px;background:rgba(255,255,255,.16);padding:5px 8px;border-radius:12px}.security-card{border:1px solid #d7e3ef;background:#f8fbff}.security-card h3{color:#1F4E78;margin-top:0}
+  .home-hero{background:linear-gradient(135deg,#eaf5ff,#f7fbff);border:1px solid #d7e8f7;border-radius:16px;padding:28px 30px;margin-bottom:16px;display:flex;justify-content:space-between;align-items:center;gap:25px;overflow:hidden}.home-hero h2{font-size:31px;margin:0;color:#123b69}.home-hero h2 span{color:#1677ef}.home-hero p{color:#60758c;max-width:620px;line-height:1.5;margin:10px 0 0}.home-hero-art{width:270px;min-width:220px;height:155px;position:relative}.home-sheet{position:absolute;background:#fff;border:1px solid #d4e5f4;border-radius:9px;padding:10px;width:105px;box-shadow:0 12px 25px rgba(31,78,120,.1)}.home-sheet.a{left:5px;top:30px;transform:rotate(-5deg)}.home-sheet.b{right:5px;top:15px;transform:rotate(5deg)}.home-sheet strong{color:#1f4e78;font-size:15px}.home-screen{position:absolute;left:62px;bottom:2px;width:150px;height:95px;border:8px solid #193f66;border-bottom-width:13px;border-radius:8px;background:#f8fcff;box-shadow:0 14px 25px rgba(31,78,120,.18);padding:10px}.home-screen i{display:block;height:6px;background:#dce9f5;border-radius:4px;margin:6px 0}.home-screen i.blue{background:#4b93ee;width:65%}.home-actions{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px}.home-action{background:#fff;border:1px solid var(--line);border-radius:13px;padding:18px;cursor:pointer;transition:.15s}.home-action:hover{transform:translateY(-2px);box-shadow:0 8px 22px rgba(31,78,120,.08)}.home-action .ha-icon{font-size:25px;margin-bottom:8px}.home-action b{display:block;color:#163b67}.home-action small{display:block;color:#7b8da1;margin-top:4px;line-height:1.35}.home-stat-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:16px}.home-stat{background:#fff;border:1px solid var(--line);border-radius:11px;padding:13px}.home-stat small{color:#718096;font-size:11px}.home-stat strong{display:block;color:#173b67;font-size:20px;margin-top:3px}.home-lower{display:grid;grid-template-columns:1.35fr .65fr;gap:12px}.home-list{background:#fff;border:1px solid var(--line);border-radius:13px;padding:16px}.home-list h3{margin:0 0 10px;color:#173b67;font-size:15px}.home-list .item{padding:9px 0;border-bottom:1px solid #edf1f5;display:flex;justify-content:space-between;color:#51677e;font-size:12px}.home-list .item:last-child{border-bottom:0}.home-list .go{color:#1677ef;font-weight:700;cursor:pointer}@media(max-width:950px){.login-shell{grid-template-columns:1fr}.login-left{padding:35px}.login-visual{display:none}.login-right{padding:30px}.home-actions{grid-template-columns:1fr 1fr}.home-stat-grid{grid-template-columns:repeat(2,1fr)}.home-lower{grid-template-columns:1fr}}@media(max-width:600px){.login-shell{min-height:auto}.login-left{padding:28px 22px}.login-brand h1{font-size:25px}.login-tag{font-size:28px}.login-features{grid-template-columns:1fr}.login-right{padding:20px}.home-hero{padding:20px}.home-hero-art{display:none}}
+
+/* ===================== MODULE SELECTOR / IMS WORKSPACE ===================== */
+#moduleGate{position:fixed;inset:0;z-index:9998;background:linear-gradient(135deg,#f4f9ff,#ffffff 52%,#eef6ff);display:none;align-items:center;justify-content:center;padding:28px;overflow:auto}
+.module-shell{width:min(1080px,100%);background:#fff;border:1px solid #dbe7f2;border-radius:24px;box-shadow:0 25px 70px rgba(31,78,120,.14);padding:42px}
+.module-brand{text-align:center;margin-bottom:34px}.module-brand .eyebrow{font-size:11px;letter-spacing:.14em;font-weight:800;color:#5b7896;text-transform:uppercase}.module-brand h2{margin:8px 0 6px;color:#123b69;font-size:32px}.module-brand p{margin:0;color:#70839a}
+.module-options{display:grid;grid-template-columns:1fr 1fr;gap:22px}.module-card{position:relative;border:1px solid #dce8f4;border-radius:20px;padding:28px;background:linear-gradient(145deg,#fff,#f7fbff);cursor:pointer;transition:.2s;overflow:hidden}.module-card:hover{transform:translateY(-3px);box-shadow:0 16px 36px rgba(31,78,120,.12);border-color:#a9c9e8}.module-card .module-icon{width:58px;height:58px;border-radius:16px;display:flex;align-items:center;justify-content:center;font-size:28px;background:#e9f4ff;color:#1677ef;margin-bottom:18px}.module-card.ims .module-icon{background:#eaf8f2;color:#14865a}.module-card h3{margin:0;color:#173f68;font-size:22px}.module-card p{color:#64788f;line-height:1.5;min-height:48px}.module-card .module-arrow{font-weight:800;color:#1677ef}.module-card.ims .module-arrow{color:#14865a}.module-mini{display:flex;gap:7px;flex-wrap:wrap;margin:16px 0 18px}.module-mini span{font-size:11px;padding:6px 9px;border-radius:999px;background:#f0f6fc;color:#526b84}.module-card.ims .module-mini span{background:#edf9f4;color:#2d735a}
+.module-footer{text-align:center;margin-top:28px;font-size:11px;color:#8191a4}
+.ims-page{padding-bottom:30px}.ims-head{background:linear-gradient(135deg,#eaf8f2,#f8fcfa);border:1px solid #d6eee3;border-radius:18px;padding:24px 26px;display:flex;justify-content:space-between;gap:18px;align-items:center}.ims-head h2{margin:0;color:#126744;font-size:28px}.ims-head p{margin:7px 0 0;color:#617b70}.ims-actions{display:flex;gap:9px;flex-wrap:wrap}.ims-cards{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin:16px 0}.ims-stat{background:#fff;border:1px solid #dde8e3;border-radius:14px;padding:15px}.ims-stat small{display:block;color:#6e7f76;font-weight:700;font-size:10px}.ims-stat strong{display:block;color:#165d43;font-size:24px;margin-top:5px}.ims-workgrid{display:grid;grid-template-columns:1.1fr .9fr;gap:16px}.ims-status-list{display:grid;grid-template-columns:1fr 1fr;gap:9px}.ims-status{border:1px solid #e1e9e5;border-radius:12px;padding:12px;background:#fbfdfc}.ims-status b{display:block;color:#285e4b}.ims-status span{font-size:12px;color:#74857d}.ims-lock{border:1px solid #d9e4ee;background:#f8fbff;border-radius:14px;padding:16px}.ims-lock.locked{background:#fff8ec;border-color:#f0d9a9}.ims-lock strong{color:#173f68}.ims-lock .lock-state{font-size:12px;color:#68798c;margin:5px 0 12px}.ims-filter{display:flex;gap:9px;flex-wrap:wrap;align-items:center}.ims-filter select,.ims-filter input{min-height:38px}.ims-empty{padding:28px;text-align:center;color:#718096;border:1px dashed #cfdce8;border-radius:12px;background:#fbfdff}.ims-note{font-size:11px;color:#6e7d8c;line-height:1.5}.module-topbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;gap:10px}.module-topbar .module-name{font-weight:800;color:#173f68}.module-topbar .module-actions{display:flex;gap:8px}
+@media(max-width:900px){.module-options,.ims-workgrid{grid-template-columns:1fr}.ims-cards{grid-template-columns:repeat(2,1fr)}.module-shell{padding:24px}.ims-head{align-items:flex-start;flex-direction:column}}
+@media(max-width:600px){.ims-cards{grid-template-columns:1fr}.ims-status-list{grid-template-columns:1fr}}
+
+.ims-table-wrap{max-height:68vh;overflow:auto;border:1px solid #dbe4ee;border-radius:10px}.ims-table-wrap table{min-width:1900px;border-collapse:separate;border-spacing:0}.ims-table-wrap thead th{position:sticky;top:0;z-index:4;background:#173b67;color:#fff;font-weight:700;white-space:nowrap}.ims-table-wrap thead tr:nth-child(2) th{top:38px;background:#eef4fa;color:#173b67}.ims-table-wrap .ims-col-filter{width:100%;min-width:70px;box-sizing:border-box;border:1px solid #cbd5e1;border-radius:4px;padding:4px;font-size:11px}.ims-table-wrap td{white-space:nowrap}.ims-table-wrap td.num{text-align:right}.ims-note-input{min-width:140px;border:1px solid #cbd5e1;border-radius:4px;padding:5px}.ims-table-wrap th,.ims-table-wrap td{padding:7px 8px;border-bottom:1px solid #e5e7eb}
+
+/* ===================== CLOUD / MULTI-COMPANY ===================== */
+.cloud-bar{display:none;align-items:center;gap:10px;flex-wrap:wrap;background:#0f2f50;border:1px solid #254d72;color:#fff;padding:9px 12px;border-radius:10px;margin:0 0 14px 0;box-shadow:0 5px 15px rgba(15,47,80,.10)}
+.cloud-bar .cloud-title{font-size:11px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;opacity:.82}
+.cloud-bar select{min-width:250px;background:#fff;color:#1f2937;border:1px solid #cbd5e1;border-radius:6px;padding:7px 9px;font-size:13px}
+.cloud-bar .cloud-meta{font-size:12px;opacity:.9;margin-left:auto}
+.cloud-bar .cloud-sync{font-size:11.5px;opacity:.86}
+.cloud-setup{border-left:4px solid #2f7fd3}
+.cloud-connected{color:#146c43;font-weight:700}
+.cloud-offline{color:#96540a;font-weight:700}
+.cloud-danger{color:#b42318}
+.cloud-small{font-size:12px;color:#667085;line-height:1.45}
+</style>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+<div id="authGate">
+  <div class="login-shell">
+    <div class="login-left">
+      <div class="login-brand"><div class="login-logo">▤</div><div><h1>GST <span>RecoPro</span></h1><div class="login-sub">GST 2B ⇄ Books Reconciliation System</div></div></div>
+      <div class="login-tag">Reconcile Smarter.<br><span>Stay GST Compliant.</span></div>
+      <div class="login-desc">Import GST 2B and Books data, reconcile invoices, and review clear, practical reports — all in one place.</div>
+      <div class="login-features">
+        <div class="login-feature"><div class="ico">↥</div><div><b>Import Easily</b><small>GST 2B, Books &amp; RCM</small></div></div>
+        <div class="login-feature"><div class="ico">↻</div><div><b>Reconcile Accurately</b><small>Match invoices &amp; find differences</small></div></div>
+        <div class="login-feature"><div class="ico">▥</div><div><b>Useful Reports</b><small>Party summary, ageing and more</small></div></div>
+        <div class="login-feature"><div class="ico">✓</div><div><b>Stay Organized</b><small>Manage periods, backup and changes</small></div></div>
+      </div>
+      <div class="login-visual"><div class="sheet one"><b>2B</b><div class="line"></div><div class="line"></div><div class="line"></div></div><div class="sheet two"><b>BOOKS</b><div class="line"></div><div class="line"></div><div class="line"></div></div><div class="laptop"><div class="screen"><div class="bar blue"></div><div class="bar"></div><div class="rows"><i></i><i></i><i></i><i></i></div></div></div></div>
+    </div>
+    <div class="login-right">
+      <div class="auth-card">
+        <div class="auth-welcome"><h2>Welcome to GST <span>RecoPro</span></h2><p>GST 2B ⇄ Books Reconciliation System</p></div>
+        <div id="cloudLoginFields" style="display:none"><div class="auth-field"><label>Cloud Email</label><input id="cloudLoginEmail" type="email" autocomplete="username" placeholder="you@company.com" onkeydown="if(event.key==='Enter')login()"></div></div>
+        <div class="auth-field" id="legacyLoginUserField"><label>Username</label><select id="loginUser"><option value="admin">Admin</option><option value="user">User</option></select></div>
+        <div class="auth-field"><label>Password</label><input id="loginPassword" type="password" autocomplete="current-password" onkeydown="if(event.key==='Enter')login()"></div>
+        <button class="btn auth-login-btn" onclick="login()">↪ &nbsp; Login</button>
+        <div id="loginError" class="auth-error"></div>
+        <div class="auth-foot">© 2026 GST RecoPro. All rights reserved.</div>
+      </div>
+    </div>
+  </div>
+</div>
+<div id="adminConfirmModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:100000;align-items:center;justify-content:center;padding:20px">
+  <div class="auth-card" style="background:#fff;width:min(430px,100%);border-radius:12px;padding:24px;box-shadow:0 20px 60px rgba(0,0,0,.22)">
+    <h2 id="adminConfirmTitle">Admin Verification</h2>
+    <div class="hint" id="adminConfirmText">Enter Admin password to continue.</div>
+    <div class="auth-field" style="margin-top:14px"><label>Admin Password</label><input id="adminConfirmPassword" type="password" autocomplete="current-password" onkeydown="if(event.key==='Enter')confirmAdminAction()"></div>
+    <div class="row"><button class="btn" onclick="confirmAdminAction()">Continue</button><button class="btn secondary" onclick="closeAdminConfirm()">Cancel</button></div>
+    <div id="adminConfirmError" class="auth-error"></div>
+  </div>
+</div>
+<div id="passwordModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:99998;align-items:center;justify-content:center;padding:20px">
+ <div class="auth-card" style="background:#fff;width:min(430px,100%);border-radius:10px;padding:24px">
+  <h2>Change Password</h2><div class="auth-brand" id="passwordTarget"></div>
+  <div class="auth-field"><label>Current Password</label><input id="currentPassword" type="password"></div>
+  <div class="auth-field"><label>New Password</label><input id="newPassword" type="password"></div>
+  <div class="auth-field"><label>Confirm New Password</label><input id="confirmPassword" type="password"></div>
+  <button class="btn" onclick="changeMyPassword()">Save Password</button> <button class="btn secondary" onclick="closePasswordDialog()">Cancel</button>
+  <div id="passwordError" class="auth-error"></div>
+ </div>
+</div>
+
+
+<div id="moduleGate">
+  <div class="module-shell">
+    <div id="cloudGateBar" class="cloud-bar"><span class="cloud-title">☁ CLOUD COMPANY</span><select id="cloudCompanySelect" onchange="cloudSwitchCompany(this.value)"></select><button class="btn secondary" id="cloudCreateCompanyBtn" onclick="cloudCreateCompany()">+ Company</button><span class="cloud-meta"><span id="cloudRoleMeta">—</span> · <span id="cloudEmailMeta">—</span></span><span class="cloud-sync" id="cloudSyncMeta">Cloud not connected</span><button class="btn secondary" onclick="cloudRefreshCompanies()">↻</button><button class="btn secondary" onclick="cloudLogout()">Logout</button></div><div class="module-brand">
+      <div class="eyebrow">GST RECONCILIATION WORKSPACE</div>
+      <h2>Choose your workspace</h2>
+      <p>Select the GST workflow you want to work on.</p>
+    </div>
+    <div class="module-options">
+      <div class="module-card" onclick="enterModule('2b')">
+        <div class="module-icon">↔</div><h3>2B Reco</h3>
+        <p>GST 2B, Books, RCM, reconciliation, exceptions and return-ready reports.</p>
+        <div class="module-mini"><span>2B Import</span><span>Books</span><span>RCM</span><span>3B</span></div>
+        <div class="module-arrow">Open 2B Reco →</div>
+      </div>
+      <div class="module-card ims" onclick="enterModule('ims')">
+        <div class="module-icon">✓</div><h3>IMS Matching</h3>
+        <p>Match IMS with Books, review invoice/DN/CN differences and finalise Accept, Reject or Pending decisions.</p>
+        <div class="module-mini"><span>IMS</span><span>Books Match</span><span>Accept / Reject</span><span>Freeze</span></div>
+        <div class="module-arrow">Open IMS Matching →</div>
+      </div>
+    </div>
+    <div class="module-footer">© 2026 GST RecoPro. All rights reserved.</div>
+  </div>
+</div>
+
+<header>
+  <div>
+    <h1>GST RecoPro</h1>
+    <div class="sub">GST 2B ⇄ Books Reconciliation System · © 2026 GST RecoPro</div>
+  </div>
+  <div id="cloudAppBar" class="cloud-bar" style="margin:0 10px 0 0;max-width:760px"><span class="cloud-title">☁</span><select id="cloudCompanySelectApp" onchange="cloudSwitchCompany(this.value)"></select><button class="btn secondary" id="cloudCreateCompanyBtnApp" onclick="cloudCreateCompany()">+ Company</button><span class="cloud-meta"><span id="cloudRoleMetaApp">—</span> · <span id="cloudEmailMetaApp">—</span></span><span class="cloud-sync" id="cloudSyncMetaApp">Cloud not connected</span></div><div class="app-userbar"><span id="rolePill" class="role-pill"></span><button class="btn secondary" onclick="enterModule('ims')">IMS Matching</button><button class="btn secondary" onclick="backToModules()">Workspaces</button><button class="btn secondary" onclick="openPasswordDialog()">Change Password</button><button class="btn secondary" onclick="logoutApp()">Logout</button><button class="btn secondary" id="appCloseBtn" onclick="lockApp()">Close</button></div><div id="storageInfo" class="sub"></div>
+</header>
+
+<nav id="tabs">
+  <button data-tab="tab-home" class="active">Home</button>
+  <button data-tab="tab-2b">2B Import</button>
+  <button data-tab="tab-books">Books Import</button>
+  <button data-tab="tab-rcm">RCM in Books</button>
+  <button data-tab="tab-reco">Reconciliation</button>
+  <button data-tab="tab-exceptions">Not in 2B (Exceptions)</button>
+  <button data-tab="tab-settings">Data / Settings</button><button data-tab="tab-tools">Tools & Reports</button>
+</nav>
+<div id="fileBanner"></div>
+
+<main>
+
+<!-- ===================== HOME / START PAGE ===================== -->
+<section id="tab-home" class="tab-panel">
+  <div class="home-hero">
+    <div><div style="font-size:12px;font-weight:700;color:#4d7398;letter-spacing:.08em;text-transform:uppercase">GST RECONCILIATION WORKSPACE</div><h2>Welcome to GST <span>RecoPro</span></h2><p>Bring GST 2B and Books together, reconcile invoices, and review differences from one clean workspace.</p></div>
+    <div class="home-hero-art"><div class="home-sheet a"><strong>2B</strong><i style="display:block;height:6px;background:#dfeaf5;border-radius:4px;margin-top:9px"></i><i style="display:block;height:6px;background:#dfeaf5;border-radius:4px;margin-top:7px;width:70%"></i></div><div class="home-sheet b"><strong>BOOKS</strong><i style="display:block;height:6px;background:#dfeaf5;border-radius:4px;margin-top:9px"></i><i style="display:block;height:6px;background:#dfeaf5;border-radius:4px;margin-top:7px;width:75%"></i></div><div class="home-screen"><i class="blue"></i><i></i><i></i><i></i></div></div>
+  </div>
+  <div class="home-actions">
+    <div class="home-action" onclick="document.querySelector('[data-tab=tab-2b]').click()"><div class="ha-icon">📥</div><b>Import GST 2B</b><small>Upload invoices and credit/debit notes</small></div>
+    <div class="home-action" onclick="document.querySelector('[data-tab=tab-books]').click()"><div class="ha-icon">📗</div><b>Import Books</b><small>Bring purchase and journal data</small></div>
+    <div class="home-action" onclick="document.querySelector('[data-tab=tab-reco]').click()"><div class="ha-icon">🔄</div><b>Reconcile</b><small>Match invoices and identify differences</small></div>
+    <div class="home-action" onclick="document.querySelector('[data-tab=tab-tools]').click()"><div class="ha-icon">📊</div><b>View Reports</b><small>Party summary, ageing and exports</small></div>
+  </div>
+  <div class="home-stat-grid">
+    <div class="home-stat"><small>2B INVOICES</small><strong id="home2bCount">0</strong></div><div class="home-stat"><small>BOOKS ROWS</small><strong id="homeBooksCount">0</strong></div><div class="home-stat"><small>MATCHED</small><strong id="homeMatchedCount">0</strong></div><div class="home-stat"><small>PENDING 2B</small><strong id="homePending2b">0</strong></div><div class="home-stat"><small>PENDING BOOKS</small><strong id="homePendingBooks">0</strong></div>
+  </div>
+  <div class="home-lower"><div class="home-list"><h3>Quick Overview</h3><div class="item"><span>Current working period</span><b class="go" id="homePeriod">—</b></div><div class="item"><span>Reconciliation status</span><b class="go" id="homeRecoStatus">Ready</b></div><div class="item"><span>Latest data refresh</span><b class="go" id="homeRefresh">Just now</b></div></div><div class="home-list"><h3>Quick Links</h3><div class="item"><span>2B vs Books Reconciliation</span><span class="go" onclick="document.querySelector('[data-tab=tab-reco]').click()">Open →</span></div><div class="item"><span>Party-wise Summary</span><span class="go" onclick="document.querySelector('[data-tab=tab-tools]').click()">View →</span></div><div class="item"><span>Ageing Report</span><span class="go" onclick="document.querySelector('[data-tab=tab-tools]').click()">View →</span></div></div></div>
+</section>
+
+<!-- ===================== 2B IMPORT ===================== -->
+<section id="tab-2b" class="tab-panel">
+  <div class="card">
+    <h2>B2B Invoices</h2>
+    <div class="hint">
+      Paste rows copied from your GSTR-2B Excel "B2B" sheet, columns in this exact order (tab-separated — copying straight from Excel works):<br>
+      <b>GSTIN of supplier&nbsp; | &nbsp;Trade/Legal name&nbsp; | &nbsp;Invoice number&nbsp; | &nbsp;Invoice type&nbsp; | &nbsp;Invoice Date&nbsp; | &nbsp;Invoice Value&nbsp; | &nbsp;Place of supply&nbsp; | &nbsp;Reverse Charge (Y/N)&nbsp; | &nbsp;Taxable Value&nbsp; | &nbsp;IGST&nbsp; | &nbsp;CGST&nbsp; | &nbsp;SGST&nbsp; | &nbsp;Cess</b>
+    </div>
+    <div class="row">
+      <label>Period (this 2B return covers): <input type="month" id="inv2bPeriod"></label>
+    </div>
+    <textarea id="inv2bPaste" placeholder="Paste invoice rows here..."></textarea>
+    <div class="row">
+      <button class="btn" onclick="importRows('2b-invoice')">Add pasted rows</button>
+      <button class="btn secondary" onclick="document.getElementById('inv2bFile').click()">📁 Import from file (.xlsx / .csv)</button>
+      <input type="file" id="inv2bFile" accept=".csv,.txt,.xlsx,.xls" style="display:none" onchange="importFromFile('2b-invoice', this)">
+      <span id="inv2bMsg" class="hint" style="margin:0;"></span>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Credit / Debit Notes (CDNR)</h2>
+    <div class="hint">
+      Paste rows from GSTR-2B "B2B-CDNR" sheet, columns in this order:<br>
+      <b>GSTIN of supplier&nbsp; | &nbsp;Trade/Legal name&nbsp; | &nbsp;Note number&nbsp; | &nbsp;Note type (Credit Note/Debit Note)&nbsp; | &nbsp;Note Date&nbsp; | &nbsp;Note Value&nbsp; | &nbsp;Place of supply&nbsp; | &nbsp;Reverse Charge (Y/N)&nbsp; | &nbsp;Taxable Value&nbsp; | &nbsp;IGST&nbsp; | &nbsp;CGST&nbsp; | &nbsp;SGST&nbsp; | &nbsp;Cess</b><br>
+      2B Credit Note auto-matches Books "Debit Note"; 2B Debit Note auto-matches Books "Credit Note".
+    </div>
+    <div class="row">
+      <label>Period: <input type="month" id="note2bPeriod"></label>
+    </div>
+    <textarea id="note2bPaste" placeholder="Paste note rows here..."></textarea>
+    <div class="row">
+      <button class="btn" onclick="importRows('2b-note')">Add pasted rows</button>
+      <button class="btn secondary" onclick="document.getElementById('note2bFile').click()">📁 Import from file (.xlsx / .csv)</button>
+      <input type="file" id="note2bFile" accept=".csv,.txt,.xlsx,.xls" style="display:none" onchange="importFromFile('2b-note', this)">
+      <span id="note2bMsg" class="hint" style="margin:0;"></span>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="flex-between">
+      <h2 style="margin:0;">All 2B rows</h2>
+      <div class="row" style="margin-top:0;">
+        <label>Filter period: <select id="filter2bPeriod" onchange="renderTwoBTable()"><option value="">All periods</option></select></label>
+        <label>Filter status: <select id="statusFilter2b" onchange="onStatusFilterChange('2b')"><option value="">All statuses</option></select></label>
+      </div>
+    </div>
+    <div class="hint" style="margin:6px 0 0;">Tip: type in any column's search box (below its header) to filter — e.g. type a party name in the Trade Name box.</div>
+    <div class="table-wrap" style="margin-top:10px;">
+      <table id="twoBTable"><thead></thead><tbody></tbody></table>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== BOOKS IMPORT ===================== -->
+<section id="tab-books" class="tab-panel" style="display:none;">
+  <div class="card">
+    <h2>Books Purchase Register</h2>
+    <div class="hint">
+      Paste rows from your Tally / accounting purchase register, columns in this order:<br>
+      <b>Date&nbsp; | &nbsp;Particulars (Supplier name)&nbsp; | &nbsp;Party GSTIN&nbsp; | &nbsp;Vch Type&nbsp; | &nbsp;Vch No.&nbsp; | &nbsp;Doc No.&nbsp; | &nbsp;Doc Date&nbsp; | &nbsp;Taxable&nbsp; | &nbsp;IGST&nbsp; | &nbsp;CGST&nbsp; | &nbsp;SGST</b><br>
+      Vch Type must be exactly one of: <b>Purchase, Purchase Services, Debit Note, Credit Note, Journal</b>.
+    </div>
+    <div class="row">
+      <label>Period (books month): <input type="month" id="booksPeriod"></label>
+    </div>
+    <textarea id="booksPaste" placeholder="Paste books rows here..."></textarea>
+    <div class="row">
+      <button class="btn" onclick="importRows('books')">Add pasted rows</button>
+      <button class="btn secondary" onclick="document.getElementById('booksFile').click()">📁 Import from file (.xlsx / .csv)</button>
+      <input type="file" id="booksFile" accept=".csv,.txt,.xlsx,.xls" style="display:none" onchange="importFromFile('books', this)">
+      <span id="booksMsg" class="hint" style="margin:0;"></span>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="flex-between">
+      <h2 style="margin:0;">All Books rows</h2>
+      <div class="row" style="margin-top:0;">
+        <label>Filter period: <select id="filterBooksPeriod" onchange="renderBooksTable()"><option value="">All periods</option></select></label>
+        <label>Filter status: <select id="statusFilterBooks" onchange="onStatusFilterChange('books')"><option value="">All statuses</option></select></label>
+      </div>
+    </div>
+    <div class="hint" style="margin:6px 0 0;">Tip: type in any column's search box (below its header) to filter — e.g. type a party name in the Particulars box.</div>
+    <div class="table-wrap" style="margin-top:10px;">
+      <table id="booksTable"><thead></thead><tbody></tbody></table>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== RCM IN BOOKS ===================== -->
+<section id="tab-rcm" class="tab-panel" style="display:none;">
+  <div class="card">
+    <h2>RCM Purchases as per Books</h2>
+    <div class="hint">
+      Paste your reverse-charge purchase entries — columns in this order:<br>
+      <b>Date&nbsp; | &nbsp;Particulars&nbsp; | &nbsp;Party GSTIN&nbsp; | &nbsp;Vch Type&nbsp; | &nbsp;Vch No.&nbsp; | &nbsp;Taxable&nbsp; | &nbsp;IGST&nbsp; | &nbsp;CGST&nbsp; | &nbsp;SGST</b><br>
+      The total feeds "ADD: RCM from Books" in the Reconciliation tab.
+    </div>
+    <div class="row">
+      <label>Period: <input type="month" id="rcmPeriod"></label>
+    </div>
+    <textarea id="rcmPaste" placeholder="Paste RCM rows here..."></textarea>
+    <div class="row">
+      <button class="btn" onclick="importRows('rcm')">Add pasted rows</button>
+      <button class="btn secondary" onclick="document.getElementById('rcmFile').click()">📁 Import from file (.xlsx / .csv)</button>
+      <input type="file" id="rcmFile" accept=".csv,.txt,.xlsx,.xls" style="display:none" onchange="importFromFile('rcm', this)">
+      <span id="rcmMsg" class="hint" style="margin:0;"></span>
+    </div>
+  </div>
+  <div class="card">
+    <div class="flex-between">
+      <h2 style="margin:0;">All RCM rows</h2>
+      <label>Filter period: <select id="filterRcmPeriod" onchange="renderRcmTable()"><option value="">All periods</option></select></label>
+    </div>
+    <div class="table-wrap" style="margin-top:10px;">
+      <table id="rcmTable"><thead></thead><tbody></tbody></table>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== RECONCILIATION ===================== -->
+<section id="tab-reco" class="tab-panel" style="display:none;">
+  <div class="card">
+    <div class="flex-between">
+      <div class="row" style="margin-top:0;">
+        <label>Period: <select id="recoPeriod" onchange="renderReco()"></select></label>
+        <span id="periodStatusPill"></span>
+      </div>
+      <div class="row" style="margin-top:0;">
+        <button class="btn secondary" id="reopenBtn" onclick="reopenPeriod()" style="display:none;">Reopen this period</button>
+        <button class="btn" id="closeBtn" onclick="closePeriod()">Close this period (lock it)</button>
+      </div>
+    </div>
+    <div id="closedNote" class="locked-note" style="display:none;">
+      This period is <b>closed</b>. Figures below are a frozen snapshot from when it was closed — they will not change even if matching status updates later. Reopen to see live figures.
+    </div>
+  </div>
+
+  <div id="recoContent"></div>
+</section>
+
+<!-- ===================== EXCEPTIONS ===================== -->
+<section id="tab-exceptions" class="tab-panel" style="display:none;">
+  <div class="card">
+    <h2>Books entries not reconciled with 2B (live, across all periods)</h2>
+    <div class="hint">Every Books row whose current status is NOT IN 2B, INVOICE NO. NOT MATCH or INVOICE AMOUNT NOT MATCHED, and has no manual Remark tag. Tag a Remark in Books Import to move a row out of this list.</div>
+    <div class="table-wrap" style="margin-top:10px;">
+      <table id="exceptionsTable"><thead></thead><tbody></tbody></table>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== SETTINGS ===================== -->
+<div class="card security-card" data-admin-only>
+  <h3>Security & Users</h3>
+  <div class="hint">Manage application passwords and User account access from this section.</div>
+  <button class="btn" onclick="openPasswordDialog()">Change Admin Password</button>
+  <button class="btn secondary" onclick="createUserAccount()">Create / Reset User</button>
+</div>
+
+<section id="tab-settings" class="tab-panel" style="display:none;">
+<div class="card cloud-setup" id="cloudSettingsCard"><h2>☁ Cloud Database &amp; Companies</h2><div class="hint">GST RecoPro cloud mode uses Supabase for one central database across companies and devices. Each company has its own isolated workspace. Cloud authentication uses Supabase Auth; company access is controlled by PostgreSQL Row Level Security.</div><div class="row" style="align-items:center;justify-content:space-between;gap:10px"><span id="cloudSettingsStatus" class="cloud-offline">Cloud not configured</span><span id="cloudSettingsCompany">No company selected</span><span id="cloudSettingsRole">—</span><button class="btn secondary" onclick="cloudRefreshCompanies()">Refresh Cloud</button></div><div class="cloud-small" style="margin-top:10px">Netlify environment variables: <b>SUPABASE_URL</b>, <b>SUPABASE_PUBLISHABLE_KEY</b>, <b>SUPABASE_SERVICE_ROLE_KEY</b>. The service-role key is used only by the server-side Netlify Function and is never sent to the browser.</div></div>
+  <div class="card">
+    <h2>Data &amp; Settings</h2>
+    <div class="hint">Best practice: connect a <b>data file</b> using the bar at the top (Create new / Open existing). Every change then auto-saves into that file, so you can replace or update this app file any time — just open the same data file again. Without a data file, data lives only in this browser and can disappear when the app file is replaced or moved.</div>
+    <div class="row">
+      <button class="btn secondary" onclick="exportBackup()">Download backup (JSON)</button>
+      <label class="btn secondary" style="cursor:pointer;">Restore from backup
+        <input type="file" id="restoreFile" accept=".json" style="display:none;" onchange="restoreBackup(event)">
+      </label>
+    </div>
+  </div>
+  <div class="card">
+    <h2>IMS Database / Data File</h2>
+    <div class="hint">IMS ka <b>alag database connection nahi chahiye</b>. IMS Records + IMS Books + Accept/Reject/Pending decisions + frozen periods ab isi connected <b>GST_Recon_Data.json</b> me save honge. Browser/localStorage fallback bhi rahega.</div>
+    <div class="row"><b id="imsDataFileStatus">Checking IMS data storage…</b><span class="hint">Same data file = 2B + Books + IMS ka single working database file.</span></div>
+  </div>
+  <div class="card">
+    <h2>Erase specific data</h2>
+    <div class="hint">Each of these only clears the one thing named — everything else is left untouched. Always download a backup first if unsure.</div>
+    <div class="row">
+      <button class="btn danger" onclick="eraseData('2b-invoice')">Erase 2B Invoices</button>
+      <button class="btn danger" onclick="eraseData('2b-note')">Erase 2B Credit/Debit Notes</button>
+      <button class="btn danger" onclick="eraseData('books')">Erase Books</button>
+      <button class="btn danger" onclick="eraseData('rcm')">Erase RCM in Books</button>
+      <button class="btn danger" onclick="eraseData('ims')">Erase IMS Data</button>
+      <button class="btn danger" onclick="eraseData('closed')">Reopen all closed periods</button>
+    </div>
+    <div class="row">
+      <button class="btn danger" onclick="eraseData('all')">Erase EVERYTHING</button>
+    </div>
+  </div>
+</section>
+
+
+<!-- ===================== IMS WORKSPACE ===================== -->
+<section id="tab-ims" class="tab-panel ims-page" style="display:none">
+  <div id="cloudIMSBar" class="cloud-bar" style="margin:0 0 12px 0"><span class="cloud-title">☁ CLOUD COMPANY</span><select id="cloudCompanySelectIMS" onchange="cloudSwitchCompany(this.value)"></select><button class="btn secondary" id="cloudCreateCompanyBtnIMS" onclick="cloudCreateCompany()">+ Company</button><span class="cloud-meta"><span id="cloudRoleMetaIMS">—</span> · <span id="cloudEmailMetaIMS">—</span></span><span class="cloud-sync" id="cloudSyncMetaIMS">Cloud not connected</span><button class="btn secondary" onclick="cloudRefreshCompanies()">↻</button></div>
+  <div class="module-topbar"><div class="module-name">GST RecoPro · IMS Matching</div><div class="module-actions"><button class="btn secondary" onclick="backToModules()">← Workspaces</button><button class="btn secondary" onclick="logoutApp()">Logout</button></div></div>
+  <div class="ims-head">
+    <div><div style="font-size:11px;font-weight:800;letter-spacing:.12em;color:#4d7d69;text-transform:uppercase">INVOICE MANAGEMENT SYSTEM</div><h2>IMS Matching & Decision Workspace</h2><p>IMS remains separate from 2B Reco. Your manual Accept / Reject / Pending decision is the final software decision.</p></div>
+    <div class="ims-actions"><button class="btn" onclick="document.getElementById('imsFile').click()">📥 Import IMS Excel</button><input id="imsFile" type="file" accept=".xlsx,.xls,.csv" style="display:none" onchange="importIMSFile(this)"><button class="btn secondary" onclick="document.getElementById('imsBooksFile').click()">📚 Import Books Excel</button><input id="imsBooksFile" type="file" accept=".xlsx,.xls,.csv" style="display:none" onchange="importIMSBooksFile(this)"><button class="btn secondary" onclick="renderIMSWorkspace()">Refresh</button></div>
+  </div>
+  <div class="card" style="margin-top:16px">
+    <div class="row" style="justify-content:space-between"><div class="ims-filter"><label style="font-weight:700;color:#345">IMS Period</label><input id="imsPeriod" type="month" aria-label="IMS Period" onchange="renderIMSWorkspace()"><span class="ims-note">Normal records are filtered by document date. Previous 2B “Not in 2B” records are checked separately and are not blocked by the month filter.</span></div></div>
+  </div>
+  <div class="ims-cards"><div class="ims-stat"><small>IMS RECORDS</small><strong id="imsTotal">0</strong></div><div class="ims-stat"><small>MATCHED</small><strong id="imsMatched">0</strong></div><div class="ims-stat"><small>NOT IN BOOKS</small><strong id="imsNotBooks">0</strong></div><div class="ims-stat"><small>NO. / AMOUNT ISSUE</small><strong id="imsIssues">0</strong></div><div class="ims-stat"><small>DECISION PENDING</small><strong id="imsPending">0</strong></div><div class="ims-stat"><small>NOT IN IMS</small><strong id="imsNotIMS">0</strong></div></div>
+  <div class="ims-workgrid">
+    <div class="card"><h3>IMS Period Control</h3><div id="imsLockBox" class="ims-lock"><strong id="imsLockTitle">No period selected</strong><div id="imsLockState" class="lock-state">Select an IMS period to begin.</div><div class="row"><button class="btn" data-ims-admin onclick="closeIMSPeriod()">Close & Freeze IMS Period</button><button class="btn secondary" data-ims-admin onclick="reopenIMSPeriod()">Reopen IMS Period</button></div></div><p class="ims-note" style="margin-top:12px">When an IMS period is closed, its imported data and manual decisions are treated as a frozen snapshot. New changes require Admin to reopen the period first.</p></div>
+    <div class="card"><h3>Matching Status</h3><div class="ims-status-list"><div class="ims-status"><b>Matched</b><span>GSTIN + document + amount</span></div><div class="ims-status"><b>Invoice No. Not Match</b><span>GSTIN + amount match, number differs</span></div><div class="ims-status"><b>Invoice Amount Not Matched</b><span>GSTIN + document match, amount differs</span></div><div class="ims-status"><b>Not in Books</b><span>IMS record has no Books counterpart</span></div></div></div>
+  </div>
+  <div class="card" style="margin-top:16px"><h3>IMS Records</h3><div class="ims-filter"><select id="imsDocFilter" onchange="renderIMSTable()"><option value="ALL">All documents</option><option value="B2B">B2B</option><option value="B2BA">B2BA</option><option value="B2B-DN">Debit Note</option><option value="B2B-DNA">Debit Note Amendment</option><option value="B2B-CN">Credit Note</option><option value="B2B-CNA">Credit Note Amendment</option></select><select id="imsDecisionFilter" onchange="renderIMSTable()"><option value="ALL">All decisions</option><option value="MATCHED">Matched</option><option value="INVOICE NO. NOT MATCH">Invoice No. Not Match</option><option value="INVOICE AMOUNT NOT MATCHED">Invoice Amount Not Matched</option><option value="NOT IN BOOKS">Not in Books</option><option value="NOT IN IMS">Not in IMS</option><option value="ACCEPTED">Accepted</option><option value="REJECTED">Rejected</option><option value="PENDING">Pending</option></select><input id="imsSearch" placeholder="Search GSTIN / invoice / party" oninput="renderIMSTable()"></div><div id="imsTable" style="margin-top:12px"></div></div>
+</section>
+
+</main>
+
+
+<!-- ===================== TOOLS & REPORTS ===================== -->
+<section id="tab-tools" class="tab-panel" style="display:none">
+  <div class="section-title">TOOLS & REPORTS</div>
+
+  <div class="card">
+    <h3>1) Excel / PDF Export</h3>
+    <div class="row">
+      <select id="exportReport">
+        <option value="reco">Reconciliation</option>
+        <option value="3b">FOR 3B</option>
+        <option value="exceptions">Not in 2B</option>
+        <option value="party">Party-wise Summary</option>
+        <option value="ageing">Ageing</option>
+      </select>
+      <button class="btn" onclick="exportExcelReport()">Download Excel</button>
+      <button class="btn secondary" onclick="exportPdfReport()">Print / Save PDF</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>2) Suggested Matches</h3>
+    <div class="row">
+      <select id="suggestPeriod"><option value="">All periods</option></select>
+      <button class="btn" onclick="renderSuggestedMatches()">Find suggestions</button>
+    </div>
+    <div id="suggestedMatches"></div>
+  </div>
+
+  <div class="card">
+    <h3>3) Party-wise Summary</h3>
+    <div class="row">
+      <select id="partyPeriod"><option value="">All periods</option></select>
+      <input id="partySearch" placeholder="Search GSTIN / party">
+      <button class="btn" onclick="renderPartySummary()">Refresh</button>
+    </div>
+    <div id="partySummary"></div>
+  </div>
+
+  <div class="card">
+    <h3>4) Ageing / Section 16(4) Watch</h3>
+    <div class="hint">Pending 2B rows are grouped by age. The date is an operational warning, not a legal conclusion; verify the applicable Section 16(4) rules for the relevant period.</div>
+    <div id="ageingReport"></div>
+  </div>
+
+  <div class="card">
+    <h3>5) Change History</h3>
+    <div id="historyReport"></div>
+  </div>
+
+  <div class="card">
+    <h3>6) Undo</h3>
+    <button class="btn" onclick="undoLastChange()">Undo last change</button>
+    <div class="hint" id="undoInfo">No undo available.</div>
+  </div>
+
+  <div class="card">
+    <h3>7) Backup Reminder</h3>
+    <div class="row">
+      <input type="number" id="backupDays" min="1" value="30">
+      <button class="btn" onclick="saveBackupReminder()">Set reminder</button>
+      <button class="btn secondary" onclick="downloadBackup()">Download Backup Now</button>
+    </div>
+    <div id="backupReminderInfo" class="hint"></div>
+  </div>
+
+  <div class="card">
+    <h3>8) Direct GST Portal File Import</h3>
+    <div class="hint">Upload the original 2B Excel/CSV. The importer detects B2B/CDNR sheets and routes them into 2B automatically.</div>
+    <div class="row">
+      <select id="gstPortalPeriod"><option value="">Select period</option></select>
+      <input type="file" id="gstPortalFile" accept=".csv,.xlsx,.xls,.txt" onchange="autoDetectGstFile(this)">
+      <div id="gstFileInfo" class="hint"></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>9) Multi-device / Team Access</h3>
+    <div class="hint">The current build remains local-first. This section prepares the app for a hosted database/sync API without pretending that localStorage is a real multi-device database.</div>
+    <div class="row">
+      <input id="syncApiUrl" placeholder="https://your-domain/api">
+      <button class="btn" onclick="saveSyncConfig()">Save Sync Settings</button>
+      <button class="btn secondary" onclick="syncNow()">Sync Now</button>
+    </div>
+    <div id="syncInfo" class="hint"></div>
+  </div>
+
+  <div class="card">
+    <h3>10) Month-to-Month Trend</h3>
+    <div class="hint">The trend chart is already part of Reconciliation and is refreshed from period data.</div>
+    <button class="btn" onclick="document.querySelector('[data-tab='tab-reco']').click()">Open Reconciliation Trend</button>
+  </div>
+</section>
+
+<footer>GST 2B ⇄ Books Reconciliation — local prototype. Not affiliated with GSTN. Verify figures before filing.</footer>
+<div id="toast" class="toast"></div>
+
+<script>
+/* =====================================================================
+   RECONCILIATION ENGINE (pure logic, no DOM) — validated separately in Node
+   ===================================================================== */
+function normKey(gstin, docNo){ return String(gstin||"").trim().toUpperCase()+"|"+String(docNo||"").trim().toUpperCase(); }
+function round2(n){ return Math.round((n+Number.EPSILON)*100)/100; }
+
+const TAG_2B = ["Ineligible","Direct Exp Booked in Books or Reverse through CN","Bill Not Booked Direct Reverse on Portal","ITC Already Reversed"];
+const TAG_BOOKS = ["Ineligible","ITC Taken from Reclaim Ledger","Reversed in Book"];
+const MANUAL_MATCH_OPTIONS = ["Matched","Mismatch"];
+// Statuses that count as "unreconciled" for deduction/exception purposes (unless a Remark is tagged).
+const UNRECONCILED_STATUSES = ["NOT IN BOOKS","NOT IN 2B","INVOICE NO. NOT MATCH","INVOICE AMOUNT NOT MATCHED","MISMATCH"];
+
+// Books rows are indexed WITHOUT a vchType restriction, so a 2B Debit Note wrongly booked as
+// "Purchase", or a Journal entry that is genuinely a purchase, can still be found and matched
+// (requirements: DN-booked-as-Purchase should not go to mismatch; Journal should match if it can).
+function buildBooksIndex(booksRows){
+  const byKey=new Map(), byGstinTaxable=new Map();
+  for(const b of booksRows){
+    const k=normKey(b.gstin,b.docNo);
+    if(!byKey.has(k)) byKey.set(k,[]);
+    byKey.get(k).push(b);
+    const k2=b.gstin.trim().toUpperCase()+"|"+round2(b.taxable);
+    if(!byGstinTaxable.has(k2)) byGstinTaxable.set(k2,[]);
+    byGstinTaxable.get(k2).push(b);
+  }
+  return {byKey,byGstinTaxable};
+}
+function computeTwoBStatus(twoBRows,booksRows){
+  const idx=buildBooksIndex(booksRows);
+  for(const row of twoBRows){
+    const candidates = idx.byKey.get(normKey(row.gstin,row.docNo)) || [];
+    const exact = candidates[0] || null;
+    let raw;
+    if(exact){ raw = round2(row.taxable-exact.taxable)===0 ? "MATCHED" : "INVOICE AMOUNT NOT MATCHED"; }
+    else{
+      const amtRows = idx.byGstinTaxable.get(row.gstin.trim().toUpperCase()+"|"+round2(row.taxable));
+      raw = (amtRows && amtRows.length) ? "INVOICE NO. NOT MATCH" : "NOT IN BOOKS";
+    }
+    row.rawStatus = raw;
+    row.effectiveStatus = row.manualMatch==="Matched" ? "MATCHED" : row.manualMatch==="Mismatch" ? "MISMATCH" : raw;
+    row.finalStatus = row.remark ? row.remark : row.effectiveStatus;
+  }
+  return twoBRows;
+}
+// 2B rows are likewise indexed WITHOUT a doc-type restriction (Invoice vs Debit/Credit Note),
+// so any Books row (including Journal) can match whichever 2B entry actually corresponds to it.
+function buildTwoBIndex(twoBRows){
+  const byKey=new Map(), byGstinTaxable=new Map();
+  for(const t of twoBRows){
+    const k=normKey(t.gstin,t.docNo);
+    if(!byKey.has(k)) byKey.set(k,[]);
+    byKey.get(k).push(t);
+    const k2=t.gstin.trim().toUpperCase()+"|"+round2(t.taxable);
+    if(!byGstinTaxable.has(k2)) byGstinTaxable.set(k2,[]);
+    byGstinTaxable.get(k2).push(t);
+  }
+  return {byKey,byGstinTaxable};
+}
+function computeBooksStatus(booksRows,twoBRows){
+  const idx=buildTwoBIndex(twoBRows);
+  for(const row of booksRows){
+    const candidates = idx.byKey.get(normKey(row.gstin,row.docNo)) || [];
+    const exact = candidates[0] || null;
+    let raw;
+    if(exact){ raw = round2(row.taxable-exact.taxable)===0 ? "MATCHED" : "INVOICE AMOUNT NOT MATCHED"; }
+    else{
+      const amtRows = idx.byGstinTaxable.get(row.gstin.trim().toUpperCase()+"|"+round2(row.taxable));
+      if(amtRows && amtRows.length) raw = "INVOICE NO. NOT MATCH";
+      else raw = (row.vchType==="Journal") ? "N/A - JOURNAL" : "NOT IN 2B";
+    }
+    row.rawStatus = raw;
+    row.effectiveStatus = row.manualMatch==="Matched" ? "MATCHED" : row.manualMatch==="Mismatch" ? "MISMATCH" : raw;
+    row.finalStatus = row.remark ? row.remark : row.effectiveStatus;
+  }
+  return booksRows;
+}
+function recomputeAll(twoBRows,booksRows){ computeTwoBStatus(twoBRows,booksRows); computeBooksStatus(booksRows,twoBRows); }
+
+function sumAmounts(rows){
+  const s={taxable:0,igst:0,cgst:0,sgst:0};
+  for(const r of rows){ s.taxable+=r.taxable||0; s.igst+=r.igst||0; s.cgst+=r.cgst||0; s.sgst+=r.sgst||0; }
+  s.taxable=round2(s.taxable); s.igst=round2(s.igst); s.cgst=round2(s.cgst); s.sgst=round2(s.sgst);
+  s.totalTax=round2(s.igst+s.cgst+s.sgst);
+  return s;
+}
+function addAmt(a,b,sign){
+  sign=sign===undefined?1:sign;
+  return {taxable:round2(a.taxable+sign*b.taxable), igst:round2(a.igst+sign*b.igst),
+          cgst:round2(a.cgst+sign*b.cgst), sgst:round2(a.sgst+sign*b.sgst),
+          totalTax:round2(a.totalTax+sign*b.totalTax)};
+}
+function countStatuses(rows,field){
+  const out={};
+  for(const r of rows){ out[r[field]]=(out[r[field]]||0)+1; }
+  return out;
+}
+function normManual(m){
+  m=m||{};
+  const t=round2(+m.taxable||0), i=round2(+m.igst||0), c=round2(+m.cgst||0), g=round2(+m.sgst||0);
+  return {taxable:t,igst:i,cgst:c,sgst:g,totalTax:round2(i+c+g)};
+}
+function buildPeriodSummary(period,twoBAll,booksAll,rcmBooksAll,manualBooksInel){
+  const twoB=twoBAll.filter(r=>r.period===period);
+  const books=booksAll.filter(r=>r.period===period);
+  const rcmBooks=rcmBooksAll.filter(r=>r.period===period);
+
+  const invoices=twoB.filter(r=>r.docType==="Invoice");
+  const notes=twoB.filter(r=>r.docType==="Note");
+  const dn2b=notes.filter(r=>r.noteType==="Debit Note");
+  const cn2b=notes.filter(r=>r.noteType==="Credit Note");
+
+  const bills=sumAmounts(invoices);
+  const dn=sumAmounts(dn2b);
+  const cn=sumAmounts(cn2b);
+  const rcm2b=sumAmounts(invoices.filter(r=>r.reverseCharge==="Yes").concat(notes.filter(r=>r.reverseCharge==="Yes")));
+  const tag2bSum=(tag)=>sumAmounts(invoices.filter(r=>r.remark===tag).concat(notes.filter(r=>r.remark===tag)));
+  const inel2b=tag2bSum("Ineligible");
+  const dexp=tag2bSum("Direct Exp Booked in Books or Reverse through CN");
+  const nobill=tag2bSum("Bill Not Booked Direct Reverse on Portal");
+  const alreadyRev=tag2bSum("ITC Already Reversed");
+
+  let net2b=bills;
+  net2b=addAmt(net2b,dn,1); net2b=addAmt(net2b,cn,1);
+  net2b=addAmt(net2b,rcm2b,-1); net2b=addAmt(net2b,inel2b,-1);
+  net2b=addAmt(net2b,dexp,-1); net2b=addAmt(net2b,nobill,-1); net2b=addAmt(net2b,alreadyRev,-1);
+
+  // A Journal row only enters the Books totals/buckets once it has actually been matched (or
+  // found to conflict) against 2B; an untouched Journal entry (still "N/A - JOURNAL") is excluded,
+  // same as before.
+  const booksRelevant=books.filter(r=> r.vchType!=="Journal" || r.finalStatus!=="N/A - JOURNAL");
+  const bkTotal=sumAmounts(booksRelevant);
+  const bkNotIn2B=sumAmounts(booksRelevant.filter(r=>UNRECONCILED_STATUSES.includes(r.finalStatus)));
+  const bkReclaim=sumAmounts(booksRelevant.filter(r=>r.finalStatus==="ITC Taken from Reclaim Ledger"));
+  const bkReversed=sumAmounts(booksRelevant.filter(r=>r.finalStatus==="Reversed in Book"));
+  const bkIneligible=sumAmounts(booksRelevant.filter(r=>r.finalStatus==="Ineligible"));
+
+  let netBooks=bkTotal;
+  netBooks=addAmt(netBooks,bkNotIn2B,-1); netBooks=addAmt(netBooks,bkReclaim,-1);
+  netBooks=addAmt(netBooks,bkReversed,-1); netBooks=addAmt(netBooks,bkIneligible,-1);
+
+  const diff=addAmt(net2b,netBooks,-1);
+
+  const cnMatched=sumAmounts(cn2b.filter(r=>r.finalStatus==="MATCHED"));
+  const dnMatched=sumAmounts(dn2b.filter(r=>r.finalStatus==="MATCHED"));
+  const rcmFromBooks=sumAmounts(rcmBooks);
+
+  let net3b=bills;
+  net3b=addAmt(net3b,bkReclaim,1); net3b=addAmt(net3b,cnMatched,1); net3b=addAmt(net3b,dnMatched,1);
+  net3b=addAmt(net3b,alreadyRev,1); net3b=addAmt(net3b,rcmFromBooks,1); net3b=addAmt(net3b,rcm2b,-1);
+
+  return {
+    period,
+    asPer2B:{bills,dn,cn,rcm2b,inel2b,dexp,nobill,alreadyRev,net2b},
+    asPerBooks:{bkTotal,bkNotIn2B,bkReclaim,bkReversed,bkIneligible,netBooks},
+    diff,
+    for3b:{bills,bkReclaim,cnMatched,dnMatched,alreadyRev,rcmFromBooks,rcm2b,net3b,
+           booksInelManual: normManual(manualBooksInel)},
+    statusCounts2B:countStatuses(invoices.concat(notes),"finalStatus"),
+    statusCountsBooks:countStatuses(books,"finalStatus"),
+  };
+}
+
+/* =====================================================================
+   STORAGE LAYER (localStorage)
+   ===================================================================== */
+const STORE_KEY_2B = "gstRecoPro_v2_2b";
+const STORE_KEY_BOOKS = "gstRecoPro_v2_books";
+const STORE_KEY_RCM = "gstRecoPro_v2_rcm";
+const STORE_KEY_CLOSED = "gstRecoPro_v2_closed";
+const STORE_KEY_SEQ = "gstRecoPro_v2_seq";
+const STORE_KEY_MANUAL = "gstRecoPro_v2_manualInel";
+
+let DB = { twoB: [], books: [], rcm: [], closed: {}, manualInel: {} };
+let nextId = 1;
+
+function loadDB(){
+  try{
+    DB.twoB = JSON.parse(localStorage.getItem(STORE_KEY_2B) || "[]");
+    DB.books = JSON.parse(localStorage.getItem(STORE_KEY_BOOKS) || "[]");
+    DB.rcm = JSON.parse(localStorage.getItem(STORE_KEY_RCM) || "[]");
+    DB.closed = JSON.parse(localStorage.getItem(STORE_KEY_CLOSED) || "{}");
+    DB.manualInel = JSON.parse(localStorage.getItem(STORE_KEY_MANUAL) || "{}");
+    nextId = parseInt(localStorage.getItem(STORE_KEY_SEQ) || "1", 10);
+  }catch(e){
+    console.error("Failed to load data, starting fresh.", e);
+    DB = { twoB: [], books: [], rcm: [], closed: {}, manualInel: {} };
+  }
+}
+function saveDB(){
+  saveLocal();
+  scheduleFileWrite();
+}
+function saveLocal(){
+  try{
+    localStorage.setItem(STORE_KEY_2B, JSON.stringify(DB.twoB));
+    localStorage.setItem(STORE_KEY_BOOKS, JSON.stringify(DB.books));
+    localStorage.setItem(STORE_KEY_RCM, JSON.stringify(DB.rcm));
+    localStorage.setItem(STORE_KEY_CLOSED, JSON.stringify(DB.closed));
+    localStorage.setItem(STORE_KEY_MANUAL, JSON.stringify(DB.manualInel));
+    localStorage.setItem(STORE_KEY_SEQ, String(nextId));
+    updateStorageInfo();
+  }catch(e){
+    alert("Could not save data to this browser (storage may be full or disabled). Your last action was NOT saved.");
+    console.error(e);
+  }
+}
+function newId(){ return nextId++; }
+function updateStorageInfo(){
+  const bytes = JSON.stringify({db:DB,ims:IMS_DB||{records:[],books:[],closed:{}}}).length;
+  document.getElementById("storageInfo").textContent =
+    DB.twoB.length + " 2B rows · " + DB.books.length + " Books rows · " + (IMS_DB.records||[]).length + " IMS rows · " + (IMS_DB.books||[]).length + " IMS Books rows · " + Math.round(bytes/1024) + " KB stored";
+}
+
+/* =====================================================================
+   PARSING HELPERS
+   ===================================================================== */
+function parseNum(s){
+  if(typeof s === "number") return s;
+  if(s===undefined||s===null) return 0;
+  const cleaned = String(s).replace(/[,₹\s]/g,"").replace(/^\((.*)\)$/,"-$1");
+  const n = parseFloat(cleaned);
+  return isNaN(n) ? 0 : n;
+}
+function parseDateFlexible(s){
+  if(s instanceof Date && !isNaN(s)){
+    const y=s.getFullYear(), m=String(s.getMonth()+1).padStart(2,"0"), d=String(s.getDate()).padStart(2,"0");
+    return y+"-"+m+"-"+d;
+  }
+  if(!s) return "";
+  s = String(s).trim();
+  // Excel serial date number (e.g. from a CSV exported without date formatting)
+  if(/^\d{4,6}(\.\d+)?$/.test(s)){
+    const serial = parseFloat(s);
+    if(serial > 20000 && serial < 60000){ // roughly year 1954-2064, avoids misreading real amounts
+      const d = new Date(Math.round((serial - 25569) * 86400 * 1000));
+      if(!isNaN(d)) return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
+    }
+  }
+  // DD/MM/YYYY or DD-MM-YYYY
+  let m = s.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/);
+  if(m) return m[3]+"-"+m[2].padStart(2,"0")+"-"+m[1].padStart(2,"0");
+  // YYYY-MM-DD already
+  m = s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
+  if(m) return m[1]+"-"+m[2].padStart(2,"0")+"-"+m[3].padStart(2,"0");
+  return s; // keep raw if unrecognised
+}
+function fmtDate(iso){
+  if(!iso) return "";
+  const m = String(iso).match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if(!m) return iso;
+  return m[3]+"/"+m[2]+"/"+m[1];
+}
+function fmtNum(n){
+  if(n===""||n===null||n===undefined) return "";
+  const neg = n<0;
+  const v = Math.abs(round2(n)).toLocaleString("en-IN",{minimumFractionDigits:0,maximumFractionDigits:2});
+  return neg ? "("+v+")" : v;
+}
+function periodLabel(p){
+  if(!p) return "";
+  const [y,m] = p.split("-");
+  const names=["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+  return names[parseInt(m,10)-1]+" "+y;
+}
+function str(v){ return (v===undefined||v===null) ? "" : String(v).trim(); }
+function splitPasteRows(text){
+  return text.split(/\r?\n/).map(l=>l.replace(/\r$/,"")).filter(l=>l.trim().length>0).map(l=>{
+    // Prefer tab (Excel paste); fall back to comma-aware CSV split.
+    return l.indexOf("\t")>=0 ? l.split("\t") : splitCsvLine(l);
+  });
+}
+function splitCsvLine(line){
+  const out=[]; let cur=""; let inQuotes=false;
+  for(let i=0;i<line.length;i++){
+    const c=line[i];
+    if(inQuotes){
+      if(c==='"'){ if(line[i+1]==='"'){ cur+='"'; i++; } else { inQuotes=false; } }
+      else cur+=c;
+    } else {
+      if(c==='"') inQuotes=true;
+      else if(c===','){ out.push(cur); cur=""; }
+      else cur+=c;
+    }
+  }
+  out.push(cur);
+  return out;
+}
+function looksLikeGSTIN(v){ return typeof v==="string" && /^\d{2}[A-Za-z0-9]{8,}/.test(v.trim()); }
+function looksLikeDateCell(v){
+  if(v instanceof Date) return true;
+  if(typeof v==="number") return v>20000 && v<60000;
+  if(typeof v!=="string") return false;
+  return /^\d{1,2}[\/\-]\d{1,2}[\/\-]\d{4}$/.test(v.trim()) || /^\d{4}-\d{1,2}-\d{1,2}$/.test(v.trim());
+}
+function maybeStripHeaderRow(kind, matrix){
+  if(!matrix.length) return matrix;
+  const col0 = matrix[0][0];
+  const isDataLike = (kind==="2b-invoice"||kind==="2b-note") ? looksLikeGSTIN(col0) : looksLikeDateCell(col0);
+  return isDataLike ? matrix : matrix.slice(1);
+}
+
+/* =====================================================================
+   IMPORT HANDLERS (shared by paste + file upload)
+   ===================================================================== */
+function periodAndIdsFor(kind){
+  if(kind==="2b-invoice") return {periodId:"inv2bPeriod", textareaId:"inv2bPaste", fileId:"inv2bFile", msgId:"inv2bMsg", minCols:13};
+  if(kind==="2b-note") return {periodId:"note2bPeriod", textareaId:"note2bPaste", fileId:"note2bFile", msgId:"note2bMsg", minCols:13};
+  if(kind==="books") return {periodId:"booksPeriod", textareaId:"booksPaste", fileId:"booksFile", msgId:"booksMsg", minCols:11};
+  if(kind==="rcm") return {periodId:"rcmPeriod", textareaId:"rcmPaste", fileId:"rcmFile", msgId:"rcmMsg", minCols:9};
+}
+
+// Builds and pushes row objects from a matrix (array of arrays) of raw cell values
+// (strings from paste/CSV, or mixed strings/numbers/Dates from an Excel file).
+function addRowsFromMatrix(kind, period, matrixIn){
+  const matrix = maybeStripHeaderRow(kind, matrixIn);
+  const minCols = periodAndIdsFor(kind).minCols;
+  let added=0, skipped=0;
+  for(const cols of matrix){
+    if(!cols || cols.length===0 || cols.every(c=>str(c)==="")) continue; // skip blank rows
+    try{
+      if(cols.length<minCols){ skipped++; continue; }
+      if(kind==="2b-invoice"){
+        DB.twoB.push({
+          id:newId(), period, docType:"Invoice",
+          gstin:str(cols[0]), tradeName:str(cols[1]), docNo:str(cols[2]), invType:str(cols[3]),
+          date:parseDateFlexible(cols[4]), invValue:parseNum(cols[5]), placeOfSupply:str(cols[6]),
+          reverseCharge: /^y/i.test(str(cols[7]))?"Yes":"No",
+          taxable:parseNum(cols[8]), igst:parseNum(cols[9]), cgst:parseNum(cols[10]), sgst:parseNum(cols[11]), cess:parseNum(cols[12]),
+          remark:"", manualMatch:""
+        });
+      } else if(kind==="2b-note"){
+        const noteType = /credit/i.test(str(cols[3])) ? "Credit Note" : "Debit Note";
+        DB.twoB.push({
+          id:newId(), period, docType:"Note", noteType,
+          gstin:str(cols[0]), tradeName:str(cols[1]), docNo:str(cols[2]),
+          date:parseDateFlexible(cols[4]), invValue:parseNum(cols[5]), placeOfSupply:str(cols[6]),
+          reverseCharge: /^y/i.test(str(cols[7]))?"Yes":"No",
+          taxable:parseNum(cols[8]), igst:parseNum(cols[9]), cgst:parseNum(cols[10]), sgst:parseNum(cols[11]), cess:parseNum(cols[12]),
+          remark:"", manualMatch:""
+        });
+      } else if(kind==="books"){
+        DB.books.push({
+          id:newId(), period,
+          date:parseDateFlexible(cols[0]), particulars:str(cols[1]), gstin:str(cols[2]), vchType:str(cols[3]),
+          vchNo:str(cols[4]), docNo:str(cols[5]), docDate:parseDateFlexible(cols[6]),
+          taxable:parseNum(cols[7]), igst:parseNum(cols[8]), cgst:parseNum(cols[9]), sgst:parseNum(cols[10]),
+          remark:"", manualMatch:""
+        });
+      } else if(kind==="rcm"){
+        DB.rcm.push({
+          id:newId(), period,
+          date:parseDateFlexible(cols[0]), particulars:str(cols[1]), gstin:str(cols[2]), vchType:str(cols[3]),
+          vchNo:str(cols[4]),
+          taxable:parseNum(cols[5]), igst:parseNum(cols[6]), cgst:parseNum(cols[7]), sgst:parseNum(cols[8]),
+        });
+      }
+      added++;
+    }catch(e){ skipped++; }
+  }
+  return {added, skipped};
+}
+
+function finishImport(msgId, result){
+  showMsg(msgId, result.added+" row(s) added" + (result.skipped? ", "+result.skipped+" skipped (wrong column count)":"") + ".", result.skipped>0);
+  recomputeAll(DB.twoB, DB.books);
+  saveDB();
+  refreshAllViews();
+}
+
+function importRows(kind){
+  const {periodId, textareaId, msgId} = periodAndIdsFor(kind);
+  const period = document.getElementById(periodId).value;
+  if(!period){ showMsg(msgId,"Please select a period first.",true); return; }
+  const raw = document.getElementById(textareaId).value;
+  const matrix = splitPasteRows(raw);
+  if(matrix.length===0){ showMsg(msgId,"Nothing to import — paste some rows first.",true); return; }
+  const result = addRowsFromMatrix(kind, period, matrix);
+  document.getElementById(textareaId).value="";
+  finishImport(msgId, result);
+}
+
+function importFromFile(kind, inputEl){
+  const {periodId, msgId} = periodAndIdsFor(kind);
+  const period = document.getElementById(periodId).value;
+  const file = inputEl.files && inputEl.files[0];
+  if(!period){ showMsg(msgId,"Please select a period first, then choose the file again.",true); inputEl.value=""; return; }
+  if(!file) return;
+  const ext = file.name.split(".").pop().toLowerCase();
+  const reader = new FileReader();
+  reader.onload = function(e){
+    try{
+      let matrix;
+      if(ext==="csv" || ext==="txt"){
+        matrix = splitPasteRows(String(e.target.result));
+      } else if(ext==="xlsx" || ext==="xls"){
+        if(typeof XLSX === "undefined"){
+          showMsg(msgId,"Excel support couldn't load (needs internet once). Save the file as CSV and try again, or paste the data instead.",true);
+          inputEl.value=""; return;
+        }
+        const wb = XLSX.read(e.target.result, {type:"array", cellDates:true});
+        const sheet = wb.Sheets[wb.SheetNames[0]];
+        matrix = XLSX.utils.sheet_to_json(sheet, {header:1, raw:true, defval:""});
+      } else {
+        showMsg(msgId,"Unsupported file type — please use .csv or .xlsx.",true);
+        inputEl.value=""; return;
+      }
+      const result = addRowsFromMatrix(kind, period, matrix);
+      finishImport(msgId, result);
+    }catch(err){
+      showMsg(msgId,"Could not read this file: "+err.message,true);
+    }
+    inputEl.value = "";
+  };
+  reader.onerror = function(){ showMsg(msgId,"Could not read this file.",true); inputEl.value=""; };
+  if(ext==="xlsx" || ext==="xls") reader.readAsArrayBuffer(file);
+  else reader.readAsText(file);
+}
+
+function showMsg(id,text,warn){
+  const el=document.getElementById(id);
+  el.textContent=text;
+  el.style.color = warn ? "#b42318" : "#146c43";
+}
+
+
+/* =====================================================================
+   TAB SWITCHING
+   ===================================================================== */
+document.getElementById("tabs").addEventListener("click",(e)=>{
+  if(e.target.tagName!=="BUTTON") return;
+  document.querySelectorAll("#tabs button").forEach(b=>b.classList.remove("active"));
+  e.target.classList.add("active");
+  document.querySelectorAll(".tab-panel").forEach(p=>p.style.display="none");
+  document.getElementById(e.target.dataset.tab).style.display="block";
+});
+
+/* =====================================================================
+   RENDERING
+   ===================================================================== */
+function statusBadge(status){
+  let cls="b-tag";
+  if(status==="MATCHED") cls="b-matched";
+  else if(status==="NOT IN BOOKS"||status==="NOT IN 2B") cls="b-notin";
+  else if(status==="INVOICE NO. NOT MATCH") cls="b-invno";
+  else if(status==="INVOICE AMOUNT NOT MATCHED"||status==="MISMATCH") cls="b-amt";
+  else if(status==="N/A - JOURNAL") cls="b-journal";
+  return '<span class="badge '+cls+'">'+status+'</span>';
+}
+function remarkSelect(kind,id,current,options){
+  let html='<select class="remark-select remark-tag-select" onchange="setRemark(\''+kind+'\','+id+',this.value)"><option value=""'+(current?"":" selected")+'>—</option>';
+  for(const opt of options){
+    html+='<option value="'+opt+'"'+(current===opt?" selected":"")+'>'+opt+'</option>';
+  }
+  html+='</select>';
+  return html;
+}
+function manualMatchSelect(kind,id,current){
+  const opts=[["","Auto"],["Matched","Force Matched"],["Mismatch","Force Mismatch"]];
+  let html='<select class="remark-select manual-match-select" onchange="setManualMatch(\''+kind+'\','+id+',this.value)">';
+  for(const [val,label] of opts){
+    html+='<option value="'+val+'"'+(current===val?" selected":"")+'>'+label+'</option>';
+  }
+  html+='</select>';
+  return html;
+}
+function setRemark(kind,id,value){
+  const list = kind==="2b" ? DB.twoB : DB.books;
+  const row = list.find(r=>r.id===id);
+  if(row){ row.remark = value; }
+  recomputeAll(DB.twoB, DB.books);
+  saveDB();
+  refreshAllViews();
+}
+function setManualMatch(kind,id,value){
+  const list = kind==="2b" ? DB.twoB : DB.books;
+  const row = list.find(r=>r.id===id);
+  if(row){ row.manualMatch = value; }
+  recomputeAll(DB.twoB, DB.books);
+  saveDB();
+  refreshAllViews();
+}
+function deleteRow(kind,id){if(!isAdmin()){toast('Only Admin can delete rows.');return;}
+  if(!confirm("Delete this row?")) return;
+  if(kind==="2b") DB.twoB = DB.twoB.filter(r=>r.id!==id);
+  else if(kind==="books") DB.books = DB.books.filter(r=>r.id!==id);
+  else if(kind==="rcm") DB.rcm = DB.rcm.filter(r=>r.id!==id);
+  recomputeAll(DB.twoB, DB.books);
+  saveDB();
+  refreshAllViews();
+}
+
+function populatePeriodFilters(){
+  const periods = Array.from(new Set(DB.twoB.map(r=>r.period).concat(DB.books.map(r=>r.period)).concat(DB.rcm.map(r=>r.period)))).sort();
+  for(const selId of ["filter2bPeriod","filterBooksPeriod","filterRcmPeriod"]){
+    const sel = document.getElementById(selId);
+    const cur = sel.value;
+    sel.innerHTML='<option value="">All periods</option>' + periods.map(p=>'<option value="'+p+'">'+periodLabel(p)+'</option>').join("");
+    sel.value = periods.includes(cur) ? cur : "";
+  }
+  const recoSel = document.getElementById("recoPeriod");
+  const curReco = recoSel.value;
+  recoSel.innerHTML = periods.map(p=>{
+    const closed = DB.closed[p];
+    return '<option value="'+p+'">'+periodLabel(p)+(closed?" 🔒 closed":"")+'</option>';
+  }).join("");
+  if(periods.includes(curReco)) recoSel.value = curReco;
+  else if(periods.length) recoSel.value = periods[periods.length-1];
+}
+
+/* ---- Generic filterable/searchable table renderer ----
+   colFilters: persistent {tableId: {colKey: searchText}} state, survives across re-renders
+   so typing in a column search box doesn't get wiped out. ---- */
+const colFilterState = {};
+function getColFilters(tableId){ if(!colFilterState[tableId]) colFilterState[tableId]={}; return colFilterState[tableId]; }
+
+function renderSmartTable(tableId, allStatusValues, rows, columns, emptyMsg, statusSelectId){
+  const filters = getColFilters(tableId);
+  const statusVal = statusSelectId ? document.getElementById(statusSelectId).value : "";
+  const filtered = rows.filter(r=>{
+    if(statusVal && r.finalStatus!==statusVal) return false;
+    for(const c of columns){
+      if(c.noFilter) continue;
+      const f = (filters[c.key]||"").trim().toLowerCase();
+      if(!f) continue;
+      if(String(c.get(r)).toLowerCase().indexOf(f)===-1) return false;
+    }
+    return true;
+  });
+
+  const table = document.getElementById(tableId);
+  const thead = table.querySelector("thead");
+  const tbody = table.querySelector("tbody");
+
+  const headRow = "<tr>"+columns.map(c=>"<th>"+c.label+"</th>").join("")+"</tr>";
+  const filterRow = "<tr>"+columns.map(c=>{
+    if(c.noFilter) return "<th></th>";
+    const v=(filters[c.key]||"").replace(/"/g,"&quot;");
+    return "<th><input type='text' class='col-filter' data-tbl='"+tableId+"' data-col='"+c.key+"' value=\""+v+"\" placeholder='search…' style='width:100%;font-size:11px;padding:3px 4px;box-sizing:border-box;'></th>";
+  }).join("")+"</tr>";
+  thead.innerHTML = headRow + filterRow;
+
+  tbody.innerHTML = filtered.map(r=>"<tr>"+columns.map(c=>c.render(r)).join("")+"</tr>").join("")
+    || "<tr><td colspan='"+columns.length+"' class='txt' style='text-align:center;color:#999;'>"+emptyMsg+"</td></tr>";
+
+  thead.querySelectorAll(".col-filter").forEach(inp=>{
+    inp.addEventListener("input", function(){
+      getColFilters(tableId)[this.dataset.col] = this.value;
+      updateSmartTableBody(tableId, allStatusValues, rows, columns, emptyMsg, statusSelectId);
+      // restore focus + cursor position after body-only update (header untouched, so this input keeps focus naturally)
+    });
+  });
+  return filtered.length;
+}
+// Re-filter and redraw only <tbody> (keeps the header/search-inputs, and thus focus, intact)
+function updateSmartTableBody(tableId, allStatusValues, rows, columns, emptyMsg, statusSelectId){
+  const filters = getColFilters(tableId);
+  const statusVal = statusSelectId ? document.getElementById(statusSelectId).value : "";
+  const filtered = rows.filter(r=>{
+    if(statusVal && r.finalStatus!==statusVal) return false;
+    for(const c of columns){
+      if(c.noFilter) continue;
+      const f = (filters[c.key]||"").trim().toLowerCase();
+      if(!f) continue;
+      if(String(c.get(r)).toLowerCase().indexOf(f)===-1) return false;
+    }
+    return true;
+  });
+  const tbody = document.getElementById(tableId).querySelector("tbody");
+  tbody.innerHTML = filtered.map(r=>"<tr>"+columns.map(c=>c.render(r)).join("")+"</tr>").join("")
+    || "<tr><td colspan='"+columns.length+"' class='txt' style='text-align:center;color:#999;'>"+emptyMsg+"</td></tr>";
+}
+
+function statusOptionsHtml(selectId, statuses, current){
+  return statuses.map(s=>'<option value="'+s+'"'+(s===current?" selected":"")+'>'+s+'</option>').join("");
+}
+
+const STATUS_2B_ALL = ["MATCHED","INVOICE AMOUNT NOT MATCHED","MISMATCH","INVOICE NO. NOT MATCH","NOT IN BOOKS"].concat(TAG_2B);
+const STATUS_BOOKS_ALL = ["MATCHED","INVOICE AMOUNT NOT MATCHED","MISMATCH","INVOICE NO. NOT MATCH","NOT IN 2B","N/A - JOURNAL"].concat(TAG_BOOKS);
+
+function twoBColumns(){
+  return [
+    {key:"period", label:"Period", get:r=>periodLabel(r.period), render:r=>"<td class='txt'>"+periodLabel(r.period)+"</td>"},
+    {key:"type", label:"Type", get:r=>r.docType==="Invoice"?"Invoice":r.noteType, render:r=>"<td class='txt'>"+(r.docType==="Invoice"?"Invoice":r.noteType)+"</td>"},
+    {key:"gstin", label:"GSTIN", get:r=>r.gstin, render:r=>"<td class='txt'>"+r.gstin+"</td>"},
+    {key:"tradeName", label:"Trade Name", get:r=>r.tradeName, render:r=>"<td class='txt'>"+r.tradeName+"</td>"},
+    {key:"docNo", label:"Doc No.", get:r=>r.docNo, render:r=>"<td class='txt'>"+r.docNo+"</td>"},
+    {key:"date", label:"Date", get:r=>fmtDate(r.date), render:r=>"<td class='txt'>"+fmtDate(r.date)+"</td>"},
+    {key:"taxable", label:"Taxable", get:r=>r.taxable, noFilter:true, render:r=>"<td>"+fmtNum(r.taxable)+"</td>"},
+    {key:"igst", label:"IGST", noFilter:true, render:r=>"<td>"+fmtNum(r.igst)+"</td>"},
+    {key:"cgst", label:"CGST", noFilter:true, render:r=>"<td>"+fmtNum(r.cgst)+"</td>"},
+    {key:"sgst", label:"SGST", noFilter:true, render:r=>"<td>"+fmtNum(r.sgst)+"</td>"},
+    {key:"rcm", label:"RCM", get:r=>r.reverseCharge, render:r=>"<td class='txt'>"+r.reverseCharge+"</td>"},
+    {key:"auto", label:"Auto Status", get:r=>r.rawStatus, render:r=>"<td class='txt'>"+statusBadge(r.rawStatus)+"</td>"},
+    {key:"manual", label:"Manual Match", noFilter:true, render:r=>"<td class='txt manual-cell'>"+manualMatchSelect("2b",r.id,r.manualMatch)+"</td>"},
+    {key:"remark", label:"Remark", noFilter:true, render:r=>"<td class='txt manual-cell'>"+remarkSelect("2b",r.id,r.remark,TAG_2B)+"</td>"},
+    {key:"note", label:"Note", noFilter:true, render:r=>"<td class='txt manual-cell'>"+rowNoteInput("2b",r.id)+"</td>"},
+    {key:"final", label:"Final Status", get:r=>r.finalStatus, render:r=>"<td class='txt'>"+statusBadge(r.finalStatus)+"</td>"},
+    {key:"del", label:"", noFilter:true, render:r=>"<td><button class='del-btn' onclick='deleteRow(\"2b\","+r.id+")' title='Delete'>✕</button></td>"},
+  ];
+}
+function booksColumns(){
+  return [
+    {key:"period", label:"Period", get:r=>periodLabel(r.period), render:r=>"<td class='txt'>"+periodLabel(r.period)+"</td>"},
+    {key:"date", label:"Date", get:r=>fmtDate(r.date), render:r=>"<td class='txt'>"+fmtDate(r.date)+"</td>"},
+    {key:"particulars", label:"Particulars", get:r=>r.particulars, render:r=>"<td class='txt'>"+r.particulars+"</td>"},
+    {key:"gstin", label:"GSTIN", get:r=>r.gstin, render:r=>"<td class='txt'>"+r.gstin+"</td>"},
+    {key:"vchType", label:"Vch Type", get:r=>r.vchType, render:r=>"<td class='txt'>"+r.vchType+"</td>"},
+    {key:"docNo", label:"Doc No.", get:r=>r.docNo, render:r=>"<td class='txt'>"+r.docNo+"</td>"},
+    {key:"taxable", label:"Taxable", noFilter:true, render:r=>"<td>"+fmtNum(r.taxable)+"</td>"},
+    {key:"igst", label:"IGST", noFilter:true, render:r=>"<td>"+fmtNum(r.igst)+"</td>"},
+    {key:"cgst", label:"CGST", noFilter:true, render:r=>"<td>"+fmtNum(r.cgst)+"</td>"},
+    {key:"sgst", label:"SGST", noFilter:true, render:r=>"<td>"+fmtNum(r.sgst)+"</td>"},
+    {key:"auto", label:"Auto Status", get:r=>r.rawStatus, render:r=>"<td class='txt'>"+statusBadge(r.rawStatus)+"</td>"},
+    {key:"manual", label:"Manual Match", noFilter:true, render:r=>"<td class='txt manual-cell'>"+manualMatchSelect("books",r.id,r.manualMatch)+"</td>"},
+    {key:"remark", label:"Remark", noFilter:true, render:r=>"<td class='txt manual-cell'>"+remarkSelect("books",r.id,r.remark,TAG_BOOKS)+"</td>"},
+    {key:"note", label:"Note", noFilter:true, render:r=>"<td class='txt manual-cell'>"+rowNoteInput("books",r.id)+"</td>"},
+    {key:"final", label:"Final Status", get:r=>r.finalStatus, render:r=>"<td class='txt'>"+statusBadge(r.finalStatus)+"</td>"},
+    {key:"del", label:"", noFilter:true, render:r=>"<td><button class='del-btn' onclick='deleteRow(\"books\","+r.id+")' title='Delete'>✕</button></td>"},
+  ];
+}
+
+function renderTwoBTable(){
+  const filter = document.getElementById("filter2bPeriod").value;
+  const rows = DB.twoB.filter(r=> !filter || r.period===filter).sort((a,b)=> a.period<b.period?1:-1 || a.id-b.id);
+  const statusSel = document.getElementById("statusFilter2b");
+  statusSel.innerHTML = '<option value="">All statuses</option>' + statusOptionsHtml(null, STATUS_2B_ALL, statusSel.value);
+  renderSmartTable("twoBTable", STATUS_2B_ALL, rows, twoBColumns(), "No rows match your filters.", "statusFilter2b");
+}
+function renderBooksTable(){
+  const filter = document.getElementById("filterBooksPeriod").value;
+  const rows = DB.books.filter(r=> !filter || r.period===filter).sort((a,b)=> a.period<b.period?1:-1 || a.id-b.id);
+  const statusSel = document.getElementById("statusFilterBooks");
+  statusSel.innerHTML = '<option value="">All statuses</option>' + statusOptionsHtml(null, STATUS_BOOKS_ALL, statusSel.value);
+  renderSmartTable("booksTable", STATUS_BOOKS_ALL, rows, booksColumns(), "No rows match your filters.", "statusFilterBooks");
+}
+function onStatusFilterChange(which){
+  if(which==="2b") updateSmartTableBody("twoBTable", STATUS_2B_ALL, DB.twoB.filter(r=>{const f=document.getElementById("filter2bPeriod").value; return !f||r.period===f;}).sort((a,b)=>a.period<b.period?1:-1||a.id-b.id), twoBColumns(), "No rows match your filters.", "statusFilter2b");
+  else updateSmartTableBody("booksTable", STATUS_BOOKS_ALL, DB.books.filter(r=>{const f=document.getElementById("filterBooksPeriod").value; return !f||r.period===f;}).sort((a,b)=>a.period<b.period?1:-1||a.id-b.id), booksColumns(), "No rows match your filters.", "statusFilterBooks");
+}
+
+function renderRcmTable(){
+  const filter = document.getElementById("filterRcmPeriod").value;
+  const rows = DB.rcm.filter(r=> !filter || r.period===filter).sort((a,b)=> a.period<b.period?1:-1 || a.id-b.id);
+  const thead = document.getElementById("rcmTable").querySelector("thead");
+  const tbody = document.getElementById("rcmTable").querySelector("tbody");
+  thead.innerHTML = "<tr><th>Period</th><th>Date</th><th>Particulars</th><th>GSTIN</th><th>Vch Type</th><th>Vch No.</th>"+
+    "<th>Taxable</th><th>IGST</th><th>CGST</th><th>SGST</th><th></th></tr>";
+  tbody.innerHTML = rows.map(r=>{
+    return "<tr>"+
+      "<td class='txt'>"+periodLabel(r.period)+"</td>"+
+      "<td class='txt'>"+fmtDate(r.date)+"</td>"+
+      "<td class='txt'>"+r.particulars+"</td>"+
+      "<td class='txt'>"+r.gstin+"</td>"+
+      "<td class='txt'>"+r.vchType+"</td>"+
+      "<td class='txt'>"+(r.vchNo||"")+"</td>"+
+      "<td>"+fmtNum(r.taxable)+"</td><td>"+fmtNum(r.igst)+"</td><td>"+fmtNum(r.cgst)+"</td><td>"+fmtNum(r.sgst)+"</td>"+
+      "<td><button class='del-btn' onclick='deleteRow(\"rcm\","+r.id+")' title='Delete'>✕</button></td>"+
+      "</tr>";
+  }).join("") || "<tr><td colspan='11' class='txt' style='text-align:center;color:#999;'>No rows yet — paste data above.</td></tr>";
+}
+
+function renderExceptions(){
+  const rows = DB.books.filter(r=> !r.remark && UNRECONCILED_STATUSES.includes(r.finalStatus))
+    .sort((a,b)=> a.period<b.period?1:-1);
+  renderSmartTable("exceptionsTable", null, rows, booksColumns().filter(c=>c.key!=="auto"), "Nothing outstanding 🎉", null);
+}
+
+
+function summaryRow(label,amt,cls){
+  return "<tr"+(cls?" class='"+cls+"'":"")+"><td class='txt'>"+label+"</td><td>"+fmtNum(amt.taxable)+"</td><td>"+fmtNum(amt.igst)+"</td><td>"+fmtNum(amt.cgst)+"</td><td>"+fmtNum(amt.sgst)+"</td><td>"+fmtNum(amt.totalTax)+"</td></tr>";
+}
+function summaryHead(){
+  return "<tr><th>&nbsp;</th><th>Taxable</th><th>IGST</th><th>CGST</th><th>SGST</th><th>Total Tax</th></tr>";
+}
+function statusCountTable(counts,order,badgeFn){
+  let html="<table class='summary-table'><thead><tr><th>Status</th><th>Count</th></tr></thead><tbody>";
+  for(const s of order){
+    html+="<tr><td class='txt'>"+statusBadge(s)+"</td><td>"+(counts[s]||0)+"</td></tr>";
+  }
+  html+="</tbody></table>";
+  return html;
+}
+
+function booksInelRow(period, closed, m){
+  if(closed){ return summaryRow("LESS: Books Ineligible (manual entry)", m); }
+  function inp(k){
+    return "<td class='manual-cell'><input type='number' step='0.01' style='width:100px;text-align:right;' value='"+(m[k]||0)+"' onchange=\"setManualInel('"+period+"','"+k+"',this.value)\"></td>";
+  }
+  return "<tr><td class='txt'>LESS: Books Ineligible (manual entry — type amounts here)</td>"+inp("taxable")+inp("igst")+inp("cgst")+inp("sgst")+"<td>"+fmtNum(m.totalTax)+"</td></tr>";
+}
+function setManualInel(period,key,val){
+  const cur = DB.manualInel[period] || {taxable:0,igst:0,cgst:0,sgst:0};
+  cur[key] = parseNum(val);
+  DB.manualInel[period] = cur;
+  saveDB();
+  renderReco();
+}
+function monthTrendHtml(){
+  const periods = Array.from(new Set(DB.twoB.map(r=>r.period).concat(DB.books.map(r=>r.period)).concat(DB.rcm.map(r=>r.period)))).filter(Boolean).sort();
+  if(!periods.length) return '';
+  const rows = periods.map(period=>{
+    const closed = DB.closed[period];
+    const s = closed ? closed.summary : buildPeriodSummary(period, DB.twoB, DB.books, DB.rcm, DB.manualInel[period]);
+    return {period, s};
+  });
+  const maxVal = Math.max(1,...rows.flatMap(x=>[
+    Math.abs(Number(x.s.asPer2B.net2b||0)),
+    Math.abs(Number(x.s.asPerBooks.netBooks||0)),
+    Math.abs(Number(x.s.diff||0)),
+    Math.abs(Number(x.s.asPerBooks.bkNotIn2B||0))
+  ]));
+  const W=980,H=320,L=58,R=18,T=22,B=52;
+  const pw=W-L-R, ph=H-T-B;
+  const x=i=>L+(rows.length===1?pw/2:(i/(rows.length-1))*pw);
+  const y=v=>T+ph-(Math.abs(Number(v||0))/maxVal)*ph;
+  const path=(key)=>rows.map((r,i)=>(i?'L':'M')+' '+x(i).toFixed(1)+' '+y(key(r.s)).toFixed(1)).join(' ');
+  const grid=[0,.25,.5,.75,1].map(f=>{const yy=T+ph-ph*f; return `<line x1="${L}" y1="${yy}" x2="${W-R}" y2="${yy}" stroke="#e5e7eb"/><text x="${L-8}" y="${yy+4}" text-anchor="end" fill="#64748b" font-size="11">${fmtINR(maxVal*f)}</text>`;}).join('');
+  const labels=rows.map((r,i)=>`<text x="${x(i)}" y="${H-28}" text-anchor="middle" fill="#475569" font-size="11">${escapeHtml(periodLabel(r.period))}</text>`).join('');
+  const points=(key,cls)=>rows.map((r,i)=>`<circle cx="${x(i)}" cy="${y(key(r.s))}" r="4" class="${cls}"/>`).join('');
+  const svg=`<svg class="trend-chart" viewBox="0 0 ${W} ${H}" role="img" aria-label="Month to month GST ITC trend">${grid}`+
+    `<path d="${path(s=>s.asPer2B.net2b)}" class="trend-line trend-2b"/>${points(s=>s.asPer2B.net2b,'trend-p2b')}`+
+    `<path d="${path(s=>s.asPerBooks.netBooks)}" class="trend-line trend-books"/>${points(s=>s.asPerBooks.netBooks,'trend-pbooks')}`+
+    `<path d="${path(s=>Math.abs(s.diff))}" class="trend-line trend-diff"/>${points(s=>Math.abs(s.diff),'trend-pdiff')}`+
+    `<path d="${path(s=>s.asPerBooks.bkNotIn2B)}" class="trend-line trend-pending"/>${points(s=>s.asPerBooks.bkNotIn2B,'trend-ppending')}${labels}</svg>`;
+  const table=rows.map(r=>`<tr><td>${escapeHtml(periodLabel(r.period))}${DB.closed[r.period]?' 🔒':''}</td><td>${fmtINR(r.s.asPer2B.net2b)}</td><td>${fmtINR(r.s.asPerBooks.netBooks)}</td><td>${fmtINR(r.s.diff)}</td><td>${fmtINR(r.s.asPerBooks.bkNotIn2B)}</td></tr>`).join('');
+  return `<div class="section-title">6) MONTH-TO-MONTH ITC TREND</div><div class="card"><div class="trend-legend"><span><i class="trend-dot trend-2b-dot"></i>Net ITC as per 2B</span><span><i class="trend-dot trend-books-dot"></i>Net ITC as per Books</span><span><i class="trend-dot trend-diff-dot"></i>Mismatch / Difference</span><span><i class="trend-dot trend-pending-dot"></i>Pending / Not in 2B</span></div><div class="trend-wrap">${svg}</div><div class="trend-note">Monthly figures use each period's current reconciliation; closed periods use their frozen snapshot.</div><table class="trend-table"><thead><tr><th>Period</th><th>Net 2B</th><th>Net Books</th><th>Difference</th><th>Pending / Not in 2B</th></tr></thead><tbody>${table}</tbody></table></div>`;
+}
+
+function renderReco(){
+  populatePeriodFilters();
+  const period = document.getElementById("recoPeriod").value;
+  const content = document.getElementById("recoContent");
+  if(!period){ content.innerHTML = "<div class='card'><p class='hint'>No data yet — import 2B and Books data first.</p></div>"; return; }
+
+  const closed = DB.closed[period];
+  document.getElementById("closedNote").style.display = closed ? "block" : "none";
+  document.getElementById("closeBtn").style.display = closed ? "none" : "inline-block";
+  document.getElementById("reopenBtn").style.display = closed ? "inline-block" : "none";
+  document.getElementById("periodStatusPill").innerHTML = closed
+    ? "<span class='pill closed'>🔒 Closed "+ (closed.closedAt? "on "+new Date(closed.closedAt).toLocaleDateString("en-IN") : "") +"</span>"
+    : "<span class='pill open'>● Live (open)</span>";
+
+  const s = closed ? closed.summary : buildPeriodSummary(period, DB.twoB, DB.books, DB.rcm, DB.manualInel[period]);
+
+  const m = s.for3b.booksInelManual || normManual(null);
+  const netAvail = addAmt(addAmt(s.for3b.net3b, s.asPer2B.inel2b, -1), m, -1);
+  const diff3b = addAmt(addAmt(netAvail, s.asPerBooks.netBooks, -1), s.for3b.rcmFromBooks, -1);
+
+  let html = "";
+  html += "<div class='section-title'>1) AS PER 2B</div>";
+  html += "<div class='card'><table class='summary-table'><thead>"+summaryHead()+"</thead><tbody>"+
+    summaryRow("Total ITC (Bills only, excl. DN/CN)", s.asPer2B.bills)+
+    summaryRow("ADD: ITC from Reclaim Ledger (tagged in Books — for information)", s.asPerBooks.bkReclaim)+
+    summaryRow("ADD: Debit Note (2B)", s.asPer2B.dn)+
+    summaryRow("LESS: Credit Note (2B) [shown as negative]", s.asPer2B.cn)+
+    summaryRow("LESS: RCM in 2B (auto)", s.asPer2B.rcm2b)+
+    summaryRow("LESS: Ineligible (2B, tagged)", s.asPer2B.inel2b)+
+    summaryRow("LESS: Direct Exp Booked in Books / Reverse through CN", s.asPer2B.dexp)+
+    summaryRow("LESS: Bill Not Booked - Direct Reverse on Portal", s.asPer2B.nobill)+
+    summaryRow("LESS: ITC Already Reversed (2B, tagged)", s.asPer2B.alreadyRev)+
+    summaryRow("LESS: ITC from Reclaim Ledger (tagged in Books — for information)", s.asPerBooks.bkReclaim)+
+    summaryRow("NET ELIGIBLE ITC AS PER 2B", s.asPer2B.net2b, "net")+
+    "</tbody></table></div>";
+
+  html += "<div class='section-title'>2) AS PER BOOKS</div>";
+  html += "<div class='card'><table class='summary-table'><thead>"+summaryHead()+"</thead><tbody>"+
+    summaryRow("Total ITC (Including DN/CN)", s.asPerBooks.bkTotal)+
+    summaryRow("LESS: Not in 2B (incl. Invoice No./Amount Not Matched, unless tagged)", s.asPerBooks.bkNotIn2B)+
+    summaryRow("LESS: ITC Taken from Reclaim Ledger", s.asPerBooks.bkReclaim)+
+    summaryRow("LESS: Reversed in Book", s.asPerBooks.bkReversed)+
+    summaryRow("LESS: Ineligible (Books, tagged)", s.asPerBooks.bkIneligible)+
+    summaryRow("NET ELIGIBLE ITC AS PER BOOKS", s.asPerBooks.netBooks, "net")+
+    summaryRow("DIFFERENCE (Net 2B minus Net Books)", s.diff, "diff")+
+    "</tbody></table></div>";
+
+  html += "<div class='section-title'>3) FOR 3B FILING</div>";
+  html += "<div class='card'><table class='summary-table'><thead>"+summaryHead()+"</thead><tbody>"+
+    summaryRow("ITC as per 2B (Bills only)", s.for3b.bills)+
+    summaryRow("ADD: ITC from Reclaim Ledger (tagged in Books)", s.for3b.bkReclaim)+
+    summaryRow("LESS: Credit Note (matched with Books)", s.for3b.cnMatched)+
+    summaryRow("ADD: Debit Note (matched with Books)", s.for3b.dnMatched)+
+    summaryRow("ADD: ITC Already Reversed (tagged in 2B)", s.for3b.alreadyRev)+
+    summaryRow("ADD: RCM from Books", s.for3b.rcmFromBooks)+
+    summaryRow("LESS: RCM in 2B", s.for3b.rcm2b)+
+    summaryRow("SUB-TOTAL", s.for3b.net3b, "total")+
+    summaryRow("LESS: Reverse in Ineligible 17(5) (from 2B tagged Ineligible)", s.asPer2B.inel2b)+
+    booksInelRow(period, closed, m)+
+    summaryRow("NET ITC AVAILABLE", netAvail, "net")+
+    summaryRow("DIFFERENCE: Net ITC Available minus ITC as per Books", diff3b, "diff")+
+    summaryRow("ITC reclaimed which was reversed (Books tag: ITC Taken from Reclaim Ledger)", s.asPerBooks.bkReclaim)+
+    "</tbody></table></div>";
+
+  html += "<div class='section-title'>4) Match Status — as per 2B</div>";
+  html += "<div class='card'>"+statusCountTable(s.statusCounts2B,["MATCHED","INVOICE AMOUNT NOT MATCHED","MISMATCH","INVOICE NO. NOT MATCH","NOT IN BOOKS"].concat(TAG_2B))+"</div>";
+
+  html += "<div class='section-title'>5) Match Status — as per Books</div>";
+  html += "<div class='card'>"+statusCountTable(s.statusCountsBooks,["MATCHED","INVOICE AMOUNT NOT MATCHED","MISMATCH","INVOICE NO. NOT MATCH","NOT IN 2B","N/A - JOURNAL"].concat(TAG_BOOKS))+"</div>";
+
+  html += monthTrendHtml();
+  content.innerHTML = html;
+}
+
+function closePeriod(){
+  const period = document.getElementById("recoPeriod").value;
+  if(!period) return;
+  if(!confirm("Close "+periodLabel(period)+"? This freezes the current reconciliation numbers for this period. You can reopen it later if needed.")) return;
+  const summary = buildPeriodSummary(period, DB.twoB, DB.books, DB.rcm, DB.manualInel[period]);
+  DB.closed[period] = { closedAt: new Date().toISOString(), summary };
+  saveDB();
+  renderReco();
+  toast("Period "+periodLabel(period)+" closed and locked.");
+}
+function reopenPeriod(){
+  const period = document.getElementById("recoPeriod").value;
+  if(!period) return;
+  if(!confirm("Reopen "+periodLabel(period)+"? It will switch back to live (current) figures.")) return;
+  delete DB.closed[period];
+  saveDB();
+  renderReco();
+  toast("Period "+periodLabel(period)+" reopened.");
+}
+
+function toast(msg){
+  const t=document.getElementById("toast");
+  t.textContent=msg; t.classList.add("show");
+  setTimeout(()=>t.classList.remove("show"),2500);
+}
+
+function refreshAllViews(){
+  populatePeriodFilters();
+  renderTwoBTable();
+  renderBooksTable();
+  renderRcmTable();
+  renderExceptions();
+  renderReco();
+  updateStorageInfo();
+}
+
+/* =====================================================================
+   BACKUP / RESTORE / RESET
+   ===================================================================== */
+function exportBackup(){
+  const backupPayload={...DB, ims:{records:IMS_DB.records||[],books:IMS_DB.books||[],closed:IMS_DB.closed||{}}, notes:readLocal(NOTES_KEY,{})};
+  const blob = new Blob([JSON.stringify(backupPayload,null,2)], {type:"application/json"});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url; a.download = "gst-reco-backup-"+new Date().toISOString().slice(0,10)+".json";
+  a.click();
+  URL.revokeObjectURL(url);
+}
+function restoreBackup(evt){
+  const file = evt.target.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = ()=>{
+    try{
+      const data = JSON.parse(reader.result);
+      if(!data.twoB || !data.books) throw new Error("Invalid backup file");
+      DB = { twoB:data.twoB||[], books:data.books||[], rcm:data.rcm||[], closed:data.closed||{}, manualInel:data.manualInel||{} };
+      if(data.ims && Array.isArray(data.ims.records)){ IMS_DB={records:data.ims.records||[],books:data.ims.books||[],closed:data.ims.closed||{}}; saveIMSDB(); } else { loadIMSDB(); }
+      writeLocal(NOTES_KEY,data.notes||{});
+      nextId = 1 + Math.max(0, ...DB.twoB.map(r=>r.id), ...DB.books.map(r=>r.id), ...DB.rcm.map(r=>r.id));
+      recomputeAll(DB.twoB, DB.books);
+      saveDB();
+      refreshAllViews();
+      toast("Backup restored.");
+    }catch(e){ alert("Could not read this backup file: "+e.message); }
+  };
+  reader.readAsText(file);
+  evt.target.value = "";
+}
+function eraseData(scope){
+  const labels = {
+    "2b-invoice": "all 2B Invoice rows",
+    "2b-note": "all 2B Credit/Debit Note rows",
+    "books": "all Books rows",
+    "rcm": "all RCM in Books rows",
+    "closed": "the lock on ALL closed periods (they'll go back to live)",
+    "ims": "ALL IMS records, IMS Books rows, decisions and IMS closed periods",
+    "all": "ALL data (2B, Books, RCM, IMS and closed periods) — everything",
+  };
+  if(!confirm("This will permanently erase " + labels[scope] + ". This cannot be undone. Continue?")) return;
+  if(scope==="all" && !confirm("Are you absolutely sure? Consider downloading a backup first.")) return;
+
+  if(scope==="2b-invoice") DB.twoB = DB.twoB.filter(r=>r.docType!=="Invoice");
+  else if(scope==="2b-note") DB.twoB = DB.twoB.filter(r=>r.docType!=="Note");
+  else if(scope==="books") DB.books = [];
+  else if(scope==="rcm") DB.rcm = [];
+  else if(scope==="closed") DB.closed = {};
+  else if(scope==="ims"){ IMS_DB = {records:[], books:[], closed:{}}; saveIMSDB(); }
+  else if(scope==="all"){ DB = { twoB:[], books:[], rcm:[], closed:{}, manualInel:{} }; IMS_DB = {records:[], books:[], closed:{}}; nextId = 1; saveIMSDB(); }
+
+  recomputeAll(DB.twoB, DB.books);
+  saveDB();
+  refreshAllViews();
+  toast("Erased: " + labels[scope] + ".");
+}
+
+
+/* =====================================================================
+   FILE-BACKED STORAGE (File System Access API, Chrome/Edge)
+   The data lives in a .json file YOU choose. The app file can be replaced/updated freely;
+   just reconnect the same data file and everything comes back.
+   ===================================================================== */
+let fileHandle = null, fileReady = false, fileWriteTimer = null;
+let fileState = {status:"none", msg:"", at:null}; // none | needs-permission | ok | error | unsupported
+const FS_SUPPORTED = typeof window.showSaveFilePicker==="function" && typeof window.showOpenFilePicker==="function";
+const FILE_TYPES = [{description:"GST Reconciliation data", accept:{"application/json":[".json"]}}];
+
+function idbOpen(){ return new Promise((res,rej)=>{ const r=indexedDB.open("gstRecoProHandles_v3",1); r.onupgradeneeded=()=>r.result.createObjectStore("h"); r.onsuccess=()=>res(r.result); r.onerror=()=>rej(r.error); }); }
+async function idbGet(k){ const db=await idbOpen(); return new Promise((res,rej)=>{ const q=db.transaction("h").objectStore("h").get(k); q.onsuccess=()=>res(q.result); q.onerror=()=>rej(q.error); }); }
+async function idbSet(k,v){ const db=await idbOpen(); return new Promise((res,rej)=>{ const t=db.transaction("h","readwrite"); t.objectStore("h").put(v,k); t.oncomplete=()=>res(); t.onerror=()=>rej(t.error); }); }
+async function idbDel(k){ const db=await idbOpen(); return new Promise((res,rej)=>{ const t=db.transaction("h","readwrite"); t.objectStore("h").delete(k); t.oncomplete=()=>res(); t.onerror=()=>rej(t.error); }); }
+
+function saveIMSLocalOnly(){try{localStorage.setItem(IMS_KEY,JSON.stringify(IMS_DB.records||[]));localStorage.setItem(IMS_BOOKS_KEY,JSON.stringify(IMS_DB.books||[]));localStorage.setItem(IMS_CLOSED_KEY,JSON.stringify(IMS_DB.closed||{}));}catch(e){console.warn("IMS local save failed",e)}}
+function dbPayload(){ return {app:"gst-recon", version:4, nextId, twoB:DB.twoB, books:DB.books, rcm:DB.rcm, closed:DB.closed, manualInel:DB.manualInel, ims:{records:IMS_DB.records||[],books:IMS_DB.books||[],closed:IMS_DB.closed||{}}}; }
+function applyPayload(d){
+  if(!d || !Array.isArray(d.twoB) || !Array.isArray(d.books)) throw new Error("Not a valid GST reconciliation data file");
+  DB = { twoB:d.twoB, books:d.books, rcm:d.rcm||[], closed:d.closed||{}, manualInel:d.manualInel||{} };
+  const maxId = Math.max(0, ...DB.twoB.map(r=>r.id), ...DB.books.map(r=>r.id), ...DB.rcm.map(r=>r.id));
+  nextId = Math.max(d.nextId||1, maxId+1);
+  if(d.ims && Array.isArray(d.ims.records)){ IMS_DB={records:d.ims.records||[],books:d.ims.books||[],closed:d.ims.closed||{}}; saveIMSLocalOnly(); } else { loadIMSDB(); }
+  recomputeAll(DB.twoB, DB.books);
+  saveLocal();
+  refreshAllViews();
+}
+function dbHasData(){ return DB.twoB.length+DB.books.length+DB.rcm.length+(IMS_DB?.records?.length||0)+(IMS_DB?.books?.length||0)>0 || Object.keys(DB.closed).length>0 || Object.keys(IMS_DB?.closed||{}).length>0; }
+
+function scheduleFileWrite(){
+  if(!fileHandle || !fileReady) return;
+  clearTimeout(fileWriteTimer);
+  fileWriteTimer = setTimeout(writeFileNow, 300);
+}
+async function writeFileNow(){
+  if(!fileHandle || !fileReady) return;
+  try{
+    const w = await fileHandle.createWritable();
+    await w.write(JSON.stringify(dbPayload()));
+    await w.close();
+    fileState = {status:"ok", msg:"", at:new Date()};
+  }catch(e){
+    fileState = {status:"error", msg:e.message, at:new Date()};
+  }
+  renderFileBanner();
+}
+async function loadFromHandle(h){
+  const f = await h.getFile();
+  const t = await f.text();
+  fileHandle = h;
+  if(t.trim()){
+    const payload = JSON.parse(t);
+    if(payload.app !== "gst-recon" || ![3,4].includes(payload.version)){
+      fileReady = false;
+      fileState = {status:"error", msg:"This data file is not compatible with this GST RecoPro version. Create/open a new data file.", at:new Date()};
+      renderFileBanner();
+      return;
+    }
+    applyPayload(payload); fileReady = true; fileState = {status:"ok", msg:"", at:new Date()}; if(payload.version===3) await writeFileNow();
+  } else { fileReady = true; await writeFileNow(); }
+}
+async function createDataFile(){
+  try{
+    const h = await window.showSaveFilePicker({suggestedName:"GST_Recon_Data.json", types:FILE_TYPES});
+    fileHandle = h; fileReady = true;
+    try{ await idbSet("dataFileV3", h); }catch(e){}
+    await writeFileNow();
+    toast("Data file created — all changes now auto-save to it.");
+  }catch(e){ if(e.name!=="AbortError") alert("Could not create the data file: "+e.message); }
+  renderFileBanner();
+}
+async function openDataFile(){
+  try{
+    const [h] = await window.showOpenFilePicker({types:FILE_TYPES, multiple:false});
+    const perm = await h.requestPermission({mode:"readwrite"});
+    if(perm!=="granted"){ alert("Permission to edit the data file was not granted."); return; }
+    const t = await (await h.getFile()).text();
+    if(t.trim() && dbHasData() && !confirm("Load data from this file? The data currently shown in the app will be REPLACED by the file's contents.")) return;
+    try{ await idbSet("dataFileV3", h); }catch(e){}
+    await loadFromHandle(h);
+    toast("Data file connected and loaded.");
+  }catch(e){ if(e.name!=="AbortError") alert("Could not open the data file: "+e.message); }
+  renderFileBanner();
+}
+async function reconnectFile(){
+  try{
+    const p = await fileHandle.requestPermission({mode:"readwrite"});
+    if(p==="granted"){ await loadFromHandle(fileHandle); toast("Data file reconnected."); }
+  }catch(e){ alert("Could not reconnect: "+e.message); }
+  renderFileBanner();
+}
+async function disconnectFile(){
+  if(!confirm("Stop auto-saving to the data file? (The file itself is not deleted; data stays in this browser.)")) return;
+  fileHandle=null; fileReady=false; clearTimeout(fileWriteTimer);
+  try{ await idbDel("dataFileV3"); }catch(e){}
+  fileState = {status:"none", msg:"", at:null};
+  renderFileBanner();
+}
+async function initFileStorage(){
+  if(!FS_SUPPORTED){ fileState={status:"unsupported",msg:"",at:null}; renderFileBanner(); return; }
+  try{
+    const h = await idbGet("dataFileV3");
+    if(h){
+      fileHandle = h;
+      const p = await h.queryPermission({mode:"readwrite"});
+      if(p==="granted") await loadFromHandle(h);
+      else fileState = {status:"needs-permission", msg:"", at:null};
+    }
+  }catch(e){ console.warn("File storage init failed", e); }
+  renderFileBanner();
+}
+function renderFileBanner(){
+  updateIMSDataFileStatus();
+  const el = document.getElementById("fileBanner");
+  if(!el) return;
+  const name = fileHandle ? fileHandle.name : "";
+  let cls="warn", html="";
+  if(fileState.status==="unsupported"){
+    html = "⚠ This browser can't save to a data file (needs Chrome or Edge). Data is kept only in this browser — use <b>Data / Settings → Download backup</b> regularly.";
+  } else if(fileState.status==="ok"){
+    cls="ok";
+    html = "💾 Auto-saving to <b>"+name+"</b>" + (fileState.at ? " · last saved "+fileState.at.toLocaleTimeString("en-IN") : "") +
+      " <button class='btn secondary' onclick='disconnectFile()'>Disconnect</button>";
+  } else if(fileState.status==="needs-permission"){
+    html = "🔒 Data file <b>"+name+"</b> found — click once to reconnect and load your data. " +
+      "<button class='btn' onclick='reconnectFile()'>Reconnect &amp; load data</button> " +
+      "<button class='btn secondary' onclick='openDataFile()'>Choose a different file</button>";
+  } else if(fileState.status==="error"){
+    cls="err";
+    html = "❌ Could not save to the data file ("+fileState.msg+"). " +
+      "<button class='btn' onclick='reconnectFile()'>Reconnect</button>";
+  } else {
+    html = "⚠ Not connected to a data file — data is only in this browser and can be lost when you replace/move this app file. " +
+      "<button class='btn' onclick='createDataFile()'>Create new data file</button> " +
+      "<button class='btn secondary' onclick='openDataFile()'>Open existing data file</button>";
+  }
+  el.className = cls;
+  el.innerHTML = html;
+}
+
+
+/* =====================================================================
+   FULL WORKFLOW FEATURES 1-14
+   ===================================================================== */
+const HISTORY_KEY='gstRecoPro_v2_history', NOTES_KEY='gstRecoPro_v2_notes', UNDO_KEY='gstRecoPro_v2_undo', BACKUP_KEY='gstRecoPro_v2_backupReminder', SYNC_KEY='gstRecoPro_v2_sync';
+
+function esc(v){return String(v??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\"/g,'&quot;').replace(/'/g,'&#39;')}
+function fmt(v){return fmtNum(v)}
+function escapeHtml(v){return esc(v)}
+function fmtINR(v){return fmtNum(v)}
+function downloadBackup(){exportBackup();const b=readLocal(BACKUP_KEY,{});b.last=new Date().toISOString();writeLocal(BACKUP_KEY,b);renderBackupReminder()}
+function readLocal(k,d){try{return JSON.parse(localStorage.getItem(k)||JSON.stringify(d))}catch(e){return d}}
+function writeLocal(k,v){localStorage.setItem(k,JSON.stringify(v))}
+function pushHistory(action,detail){const h=readLocal(HISTORY_KEY,[]);h.unshift({at:new Date().toISOString(),action,detail});writeLocal(HISTORY_KEY,h.slice(0,500));}
+function snapshotForUndo(){writeLocal(UNDO_KEY,JSON.stringify(DB));const u=document.getElementById('undoInfo');if(u)u.textContent='Undo available for the latest change.'}
+function undoLastChange(){const raw=localStorage.getItem(UNDO_KEY);if(!raw){toast('No undo available.');return}try{DB=JSON.parse(raw);saveDB();recomputeAll(DB.twoB,DB.books);refreshAllViews();localStorage.removeItem(UNDO_KEY);pushHistory('Undo','Restored previous database snapshot');toast('Last change undone.')}catch(e){alert(e.message)}}
+function allPeriods(){return [...new Set([...DB.twoB,...DB.books,...DB.rcm].map(r=>r.period).filter(Boolean))].sort()}
+function populateToolPeriods(){for(const id of ['suggestPeriod','partyPeriod']){const el=document.getElementById(id);if(!el)continue;const v=el.value;el.innerHTML='<option value="">All periods</option>'+allPeriods().map(p=>`<option value="${esc(p)}">${esc(periodLabel(p))}</option>`).join('');el.value=v}}
+function excelEscape(v){return String(v??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')}
+function downloadHtmlExcel(filename,title,headers,rows){
+  // Export as a real XLSX workbook when SheetJS is available. The previous
+  // HTML-with-.xls approach could open as a blank/incorrect workbook in some
+  // Excel versions even though the PDF export worked correctly.
+  try{
+    if(typeof XLSX!=='undefined' && XLSX.utils && XLSX.writeFile){
+      const data=[headers,...rows];
+      const ws=XLSX.utils.aoa_to_sheet(data);
+      ws['!cols']=headers.map((h,i)=>({wch:Math.min(28,Math.max(12,Math.max(String(h||'').length,...rows.map(r=>String(r?.[i]??'').length).slice(0,200))+2))}));
+      const range=XLSX.utils.decode_range(ws['!ref']||'A1');
+      for(let c=range.s.c;c<=range.e.c;c++){
+        const cell=ws[XLSX.utils.encode_cell({r:0,c})];
+        if(cell) cell.s={font:{bold:true,color:{rgb:'FFFFFF'}},fill:{fgColor:{rgb:'173B67'}},alignment:{horizontal:'center'}};
+      }
+      const wb=XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb,ws,String(title||'Report').slice(0,31));
+      XLSX.writeFile(wb,filename.replace(/\.xls[x]?$/i,'')+'.xlsx');
+      toast('Excel exported successfully.');
+      return;
+    }
+  }catch(e){
+    console.error('XLSX export failed:',e);
+  }
+  // Reliable offline fallback: download CSV, which opens directly in Excel.
+  const safeRows=Array.isArray(rows)?rows:[];
+  const csv=[headers,...safeRows].map(r=>r.map(v=>`"${String(v??'').replace(/"/g,'""')}"`).join(',')).join('\r\n');
+  const blob=new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=filename.replace(/\.xls[x]?$/i,'')+'.csv';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000);
+  toast('Excel library unavailable — CSV exported for Excel.');
+}
+function exportExcelReport(){
+  const t=document.getElementById('exportReport')?.value||'reco';
+  const periods=allPeriods();
+  if(t==='reco'){
+    const rows=periods.map(p=>{const s=buildPeriodSummary(p,DB.twoB,DB.books,DB.rcm,DB.manualInel[p]||{});return[p,s.asPer2B.net2b,s.asPerBooks.netBooks,s.diff,s.asPerBooks.bkNotIn2B]});
+    downloadHtmlExcel('GST_Reconciliation.xlsx','GST Reconciliation',['Period','2B Net ITC','Books Net ITC','Difference','Books Not in 2B'],rows);
+  }else if(t==='3b'){
+    const rows=periods.map(p=>{const s=buildPeriodSummary(p,DB.twoB,DB.books,DB.rcm,DB.manualInel[p]||{});const m=s.for3b.booksInelManual||normManual(null);const netAvail=addAmt(addAmt(s.for3b.net3b,s.asPer2B.inel2b,-1),m,-1);const diff3b=addAmt(addAmt(netAvail,s.asPerBooks.netBooks,-1),s.for3b.rcmFromBooks,-1);return[p,s.for3b.bills,s.for3b.net3b,netAvail,diff3b,s.for3b.rcmFromBooks]});
+    downloadHtmlExcel('GST_FOR_3B.xlsx','FOR 3B',['Period','ITC as per 2B','Subtotal 3B','Net ITC Available','Difference','RCM from Books'],rows);
+  }else if(t==='exceptions'){
+    const rows=DB.books.filter(r=>!r.remark&&UNRECONCILED_STATUSES.includes(r.finalStatus)).map(r=>[r.period,r.date,r.particulars,r.gstin,r.docNo,r.taxable,r.igst,r.cgst,r.sgst,r.finalStatus]);
+    downloadHtmlExcel('GST_Not_in_2B.xlsx','Not in 2B',['Period','Date','Particulars','GSTIN','Doc No','Taxable','IGST','CGST','SGST','Status'],rows);
+  }else if(t==='party'){
+    downloadPartySummaryExcel();
+  }else{
+    downloadHtmlExcel('GST_Ageing.xlsx','Ageing',['Party','GSTIN','Doc No','Period','Date','Taxable','Age Months','Age Bucket'],ageingRows().map(x=>[x.party,x.gstin,x.docNo,x.period,x.date,x.taxable,x.age,x.bucket]));
+  }
+}
+function exportPdfReport(){
+  const t=document.getElementById('exportReport').value;
+  const meta={reco:{title:'GST Reconciliation Report',sub:'Period-wise 2B ⇄ Books reconciliation'},'3b':{title:'GST FOR 3B Report',sub:'ITC summary for GSTR-3B working'},exceptions:{title:'GST Exceptions Report',sub:'Books entries pending in GST 2B reconciliation'},party:{title:'Party-wise GST Reconciliation',sub:'Supplier-wise ITC summary'},ageing:{title:'GST Ageing Report',sub:'Pending invoice ageing / Section 16(4) watch'}}[t]||{title:'GST Report',sub:'GST 2B ⇄ Books Reconciliation System'};
+  let content='';
+  if(t==='reco')content=document.querySelector('#tab-reco').innerHTML;
+  else if(t==='3b')content=document.querySelector('#tab-reco').innerHTML;
+  else if(t==='exceptions')content=document.getElementById('exceptionsTable')?.outerHTML||'';
+  else if(t==='party')content=document.getElementById('partySummary').innerHTML;
+  else content=document.getElementById('ageingReport').innerHTML;
+  const w=window.open('','_blank');if(!w){alert('Allow pop-ups to save PDF.');return}
+  const now=new Date().toLocaleString('en-IN',{dateStyle:'medium',timeStyle:'short'});
+  w.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>${meta.title}</title><style>
+  @page{size:A4 landscape;margin:14mm 10mm 15mm}*{box-sizing:border-box}body{font-family:Arial,Helvetica,sans-serif;color:#172033;background:#fff;margin:0;font-size:10px}.print-head{border-bottom:3px solid #173b67;padding:0 0 10px;margin-bottom:14px;display:flex;justify-content:space-between;align-items:flex-end}.brand{font-size:21px;font-weight:800;color:#173b67}.subbrand{font-size:10px;color:#667085;margin-top:3px}.report-title{text-align:right}.report-title h1{font-size:17px;margin:0;color:#173b67}.report-title div{font-size:9px;color:#667085;margin-top:3px}.meta{background:#f3f6fa;border:1px solid #d9e1ea;border-radius:6px;padding:7px 9px;margin-bottom:12px;color:#475467}.content h1,.content h2,.content h3{color:#173b67}.content table{border-collapse:collapse;width:100%;font-size:9px;margin-top:7px}.content th{background:#173b67;color:#fff;font-weight:700;padding:6px 5px;border:1px solid #173b67;text-align:left}.content td{padding:5px;border:1px solid #d7dee8;vertical-align:top}.content tr:nth-child(even) td{background:#f8fafc}.content .card{border:0;box-shadow:none;padding:0;margin:0 0 12px}.content .section-title{font-size:13px;color:#173b67;border-bottom:1px solid #cbd5e1;padding-bottom:5px;margin:10px 0}.content .row,.content .hint,.content input,.content select,.content button,.content label,.content .locked-note{display:none!important}.content .table-wrap{overflow:visible!important}.content .table-wrap table{min-width:0!important}.print-foot{position:fixed;bottom:-8mm;left:0;right:0;border-top:1px solid #d7dee8;padding-top:4px;font-size:8px;color:#667085;display:flex;justify-content:space-between}@media print{body{-webkit-print-color-adjust:exact;print-color-adjust:exact}}
+  </style></head><body><div class="print-head"><div><div class="brand">GST RecoPro</div><div class="subbrand">GST 2B ⇄ Books Reconciliation System · © 2026 GST RecoPro</div></div><div class="report-title"><h1>${meta.title}</h1><div>${meta.sub}</div></div></div><div class="meta"><b>© 2026 GST RecoPro · All rights reserved.</b> &nbsp; | &nbsp; Generated: ${now}</div><div class="content">${content}</div><div class="print-foot"><span>GST RecoPro · ${meta.title}</span><span>© 2026 GST RecoPro</span></div>
+<script>
+
+</body></html>`);
+  w.document.close();w.focus();setTimeout(()=>w.print(),500)
+}
+function normalizeDoc(v){return String(v||'').toUpperCase().replace(/[^A-Z0-9]/g,'').replace(/^0+/,'')}
+function suggestedScore(a,b){const x=normalizeDoc(a),y=normalizeDoc(b);if(!x||!y)return 0;if(x===y)return 100;let common=0;while(common<Math.min(x.length,y.length)&&x[common]===y[common])common++;const contains=x.includes(y)||y.includes(x);return contains?85:Math.round(common/Math.max(x.length,y.length)*70)}
+function renderSuggestedMatches(){const period=document.getElementById('suggestPeriod').value;const books=DB.books.filter(r=>(!period||r.period===period)&&['INVOICE NO. NOT MATCH','NOT IN 2B'].includes(r.finalStatus));const box=document.getElementById('suggestedMatches');let html='';books.forEach(b=>{const cand=DB.twoB.filter(x=>x.gstin===b.gstin&&(!period||x.period===period)).map(x=>({x,score:suggestedScore(b.docNo,x.docNo),amt:Math.abs(round2((b.taxable||0)-(x.taxable||0)))})).filter(z=>z.score>=65).sort((a,c)=>c.score-a.score||a.amt-c.amt)[0];if(cand)html+=`<div class="suggest-row suggest-good"><span><b>${esc(b.docNo)}</b> → ${esc(cand.x.docNo)} | ${cand.score}% similar | taxable diff ₹${cand.amt}</span><button class="btn" onclick="confirmSuggested('${b.id}','${cand.x.id}')">Confirm</button></div>`});box.innerHTML=html||'<div class="hint">No suggested matches found.</div>'}
+function confirmSuggested(bid,tid){const b=DB.books.find(x=>String(x.id)===String(bid)),t=DB.twoB.find(x=>String(x.id)===String(tid));if(!b||!t)return;snapshotForUndo();b.manualMatch='Matched';b.remark='';b.suggestedMatch=t.id;saveDB();recomputeAll(DB.twoB,DB.books);refreshAllViews();pushHistory('Suggested match',`${b.docNo} matched to ${t.docNo}`);renderSuggestedMatches();toast('Match confirmed.')}
+function partyRows(periodFilter=''){
+  const map={};
+  const add=(gstin,party,fn)=>{
+    const g=String(gstin||'').trim();
+    const key=g||String(party||'UNKNOWN').trim()||'UNKNOWN';
+    map[key] ||= {party:String(party||'').trim(),gstin:g,total2b:0,totalBooks:0,diff:0,pending:0};
+    if(!map[key].party && party) map[key].party=String(party).trim();
+    if(!map[key].gstin && g) map[key].gstin=g;
+    fn(map[key]);
+  };
+  DB.twoB.filter(r=>!periodFilter||r.period===periodFilter).forEach(r=>{
+    if(r.finalStatus==='MATCHED'||r.finalStatus==='INVOICE NO. NOT MATCH') add(r.gstin,r.tradeName||r.gstin,x=>x.total2b+=r.taxable||0);
+  });
+  DB.books.filter(r=>!periodFilter||r.period===periodFilter).forEach(r=>{
+    if(r.finalStatus!=='N/A - JOURNAL') add(r.gstin,r.particulars||r.gstin,x=>x.totalBooks+=r.taxable||0);
+    if(r.finalStatus==='NOT IN 2B'||r.finalStatus==='INVOICE NO. NOT MATCH') add(r.gstin,r.particulars||r.gstin,x=>x.pending+=r.taxable||0);
+  });
+  return Object.values(map).map(x=>({...x,diff:round2(x.total2b-x.totalBooks)})).sort((a,b)=>Math.abs(b.diff)-Math.abs(a.diff));
+}
+function renderPartySummary(){
+  const q=(document.getElementById('partySearch').value||'').toUpperCase(),p=document.getElementById('partyPeriod').value;
+  const rows=partyRows(p).filter(x=>!q||String(x.gstin||'').toUpperCase().includes(q)||String(x.party||'').toUpperCase().includes(q));
+  document.getElementById('partySummary').innerHTML=`<table class="tools-table"><tr><th>Party / GSTIN</th><th>2B</th><th>Books</th><th>Difference</th><th>Pending</th></tr>${rows.map(x=>{const label=x.party&&x.party!==x.gstin?`${esc(x.party)}<br><span class="muted-gstin">${esc(x.gstin)}</span>`:esc(x.gstin||x.party);return`<tr><td>${label}</td><td>${fmt(x.total2b)}</td><td>${fmt(x.totalBooks)}</td><td>${fmt(x.diff)}</td><td>${fmt(x.pending)}</td></tr>`}).join('')}</table>`
+}
+function downloadPartySummaryExcel(){const rows=partyRows(document.getElementById('partyPeriod')?.value||'').map(x=>[x.party,x.gstin,x.total2b,x.totalBooks,x.diff,x.pending]);downloadHtmlExcel('GST_Party_Summary.xls','Party-wise Summary',['Party','GSTIN','2B','Books','Difference','Pending'],rows)}
+function ageingRows(){const now=new Date();return DB.books.filter(r=>r.finalStatus==='NOT IN 2B').map(r=>{const d=new Date(r.date||r.docDate||now);const age=Math.max(0,Math.floor((now-d)/(30.4375*86400000)));return{party:r.particulars||r.gstin,gstin:r.gstin,docNo:r.docNo,period:r.period,date:r.date||r.docDate,taxable:r.taxable||0,age,bucket:age<=1?'1 month':age<=3?'2-3 months':'3+ months'}})}
+function renderAgeing(){const rows=ageingRows();const c=a=>rows.filter(x=>x.bucket===a).length;document.getElementById('ageingReport').innerHTML=`<div class="row"><b>1 month:</b> ${c('1 month')} &nbsp; <b>2-3 months:</b> ${c('2-3 months')} &nbsp; <b>3+ months:</b> ${c('3+ months')}</div><table class="tools-table"><tr><th>Party</th><th>GSTIN</th><th>Doc</th><th>Period</th><th>Date</th><th>Taxable</th><th>Age</th><th>Bucket</th></tr>${rows.map(x=>`<tr><td>${esc(x.party)}</td><td>${esc(x.gstin)}</td><td>${esc(x.docNo)}</td><td>${esc(x.period)}</td><td>${esc(x.date)}</td><td>${fmt(x.taxable)}</td><td>${x.age}</td><td>${x.bucket}</td></tr>`).join('')}</table>`}
+function renderNotes(){}
+function noteKey(kind,id){return String(id)+'_'+(kind==='books'?'b':'2')}
+function rowNoteInput(kind,id){const n=readLocal(NOTES_KEY,{}),k=noteKey(kind,id);return `<input class="row-note-input" value="${excelEscape(n[k]||'')}" placeholder="Note..." onchange="saveRowNoteFromInput('${kind}',${id},this.value)" title="Row note">`}
+function saveRowNoteFromInput(kind,id,value){const n=readLocal(NOTES_KEY,{});n[noteKey(kind,id)]=String(value??'');writeLocal(NOTES_KEY,n);pushHistory('Row note',`${kind}:${id}`);toast('Note saved.')}
+function renderHistory(){const h=readLocal(HISTORY_KEY,[]);document.getElementById('historyReport').innerHTML=`<table class="tools-table"><tr><th>Time</th><th>Action</th><th>Details</th></tr>${h.slice(0,100).map(x=>`<tr><td>${new Date(x.at).toLocaleString('en-IN')}</td><td>${esc(x.action)}</td><td>${esc(x.detail)}</td></tr>`).join('')}</table>`}
+function saveBackupReminder(){const days=+document.getElementById('backupDays').value||30;writeLocal(BACKUP_KEY,{days,last:readLocal(BACKUP_KEY,{}).last||new Date().toISOString()});renderBackupReminder();toast('Backup reminder saved.')}
+function renderBackupReminder(){const b=readLocal(BACKUP_KEY,null),e=document.getElementById('backupReminderInfo');if(!e)return;if(!b){e.textContent='No backup reminder set.';return}const due=(Date.now()-new Date(b.last).getTime())/86400000>=b.days;e.textContent=due?'⚠ Backup is due. Download a backup now.':`Last backup: ${new Date(b.last).toLocaleDateString('en-IN')} · next reminder after ${b.days} days.`}
+function autoDetectGstFile(input){
+ const f=input.files?.[0]; if(!f)return; const info=document.getElementById('gstFileInfo'); const period=document.getElementById('gstPortalPeriod').value;
+ if(!period){info.textContent='Please select a period first.';input.value='';return;}
+ const ext=f.name.split('.').pop().toLowerCase(); const reader=new FileReader();
+ reader.onload=function(e){try{
+   let sheets=[];
+   if(ext==='xlsx'||ext==='xls'){ if(typeof XLSX==='undefined')throw new Error('Excel reader could not load.'); const wb=XLSX.read(e.target.result,{type:'array',cellDates:true});
+     sheets=wb.SheetNames.map(name=>({name,matrix:XLSX.utils.sheet_to_json(wb.Sheets[name],{header:1,raw:true,defval:''})}));
+   }else sheets=[{name:f.name,matrix:splitPasteRows(String(e.target.result))}];
+   let total=0,matchedSheets=[];
+   for(const sh of sheets){const name=String(sh.name).toLowerCase();const matrix=sh.matrix;const head=(matrix.slice(0,12).map(r=>r.join(' ').toLowerCase()).join(' '));
+     const isCDNR=name.includes('cdnr')||head.includes('note number')||head.includes('note type');
+     const isB2B=name.includes('b2b')||head.includes('invoice number')||head.includes('invoice type');
+     if(!isCDNR&&!isB2B)continue;
+     const kind=isCDNR?'2b-note':'2b-invoice'; const result=addRowsFromMatrix(kind,period,matrix); total+=result.added; matchedSheets.push(`${sh.name}: ${result.added}`);
+   }
+   if(!matchedSheets.length)throw new Error('No B2B/CDNR sheet/header was detected.');
+   finishImport('',{added:total,skipped:0});
+   info.textContent=`Imported ${total} row(s) from ${f.name}: ${matchedSheets.join(' | ')}`;pushHistory('GST portal import',`${f.name}: ${total} rows`);
+ }catch(err){info.textContent='Could not auto-import: '+err.message} input.value='';};
+ if(ext==='xlsx'||ext==='xls')reader.readAsArrayBuffer(f);else reader.readAsText(f);
+}
+function saveSyncConfig(){const url=document.getElementById('syncApiUrl').value.trim();writeLocal(SYNC_KEY,{url});document.getElementById('syncInfo').textContent=url?'Sync endpoint saved.':'No sync endpoint configured.'}
+async function syncNow(){const c=readLocal(SYNC_KEY,{});if(!c.url){toast('Configure a sync API first.');return}try{const res=await fetch(c.url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(DB)});document.getElementById('syncInfo').textContent=`Sync response: ${res.status}`;pushHistory('Cloud sync',String(res.status))}catch(e){document.getElementById('syncInfo').textContent='Sync failed: '+e.message}}
+function refreshFullTools(){populateToolPeriods(); const gp=document.getElementById('gstPortalPeriod'); if(gp){const gv=gp.value;gp.innerHTML='<option value="">Select period</option>'+allPeriods().map(p=>`<option value="${esc(p)}">${esc(periodLabel(p))}</option>`).join('');gp.value=gv||allPeriods().at(-1)||'';}renderSuggestedMatches();renderPartySummary();renderAgeing();renderHistory();renderBackupReminder();const c=readLocal(SYNC_KEY,{});if(document.getElementById('syncApiUrl'))document.getElementById('syncApiUrl').value=c.url||''}
+const oldRefreshAllViews=refreshAllViews;
+refreshAllViews=function(){oldRefreshAllViews();setTimeout(()=>{refreshFullTools();refreshHome();applyRoleUI()},0)};
+// Existing saveDB remains the authoritative persistence function; undo snapshots are created before bulk/destructive actions.
+
+
+
+async function changeUserPasswordAdmin(){
+  if(!isAdmin()){toast('Admin permission required.');return}
+  const p=prompt('Enter new password for User (minimum 8 characters):');
+  if(!p)return;
+  if(p.length<8){alert('Password must be at least 8 characters.');return}
+  const a=getAuth();a.user=await sha256Hex(p);setAuth(a);toast('User password changed.');
+}
+
+/* Admin verification for sensitive actions */
+let pendingAdminAction=null;
+function requestAdminVerification(title, text, action){
+  if(!isAdmin()){toast('Admin permission required.');return}
+  pendingAdminAction=action;
+  document.getElementById('adminConfirmTitle').textContent=title||'Admin Verification';
+  document.getElementById('adminConfirmText').textContent=text||'Enter Admin password to continue.';
+  document.getElementById('adminConfirmPassword').value='';
+  document.getElementById('adminConfirmError').textContent='';
+  document.getElementById('adminConfirmModal').style.display='flex';
+  setTimeout(()=>document.getElementById('adminConfirmPassword').focus(),50);
+}
+function closeAdminConfirm(){pendingAdminAction=null;document.getElementById('adminConfirmModal').style.display='none';document.getElementById('adminConfirmPassword').value='';document.getElementById('adminConfirmError').textContent=''}
+async function confirmAdminAction(){
+  if(!pendingAdminAction)return;
+  const p=document.getElementById('adminConfirmPassword').value,a=getAuth();
+  if(!p || await sha256Hex(p)!==a.admin){document.getElementById('adminConfirmError').textContent='Incorrect Admin password.';return}
+  const action=pendingAdminAction; closeAdminConfirm(); await action();
+}
+async function createUserAccount(){
+  requestAdminVerification('Create / Reset User','Enter Admin password to create or reset the User account.',async()=>{
+    const p=prompt('Enter the new User password (minimum 8 characters):');
+    if(!p)return;
+    if(p.length<8){alert('Password must be at least 8 characters.');return}
+    const c=prompt('Confirm the new User password:');
+    if(p!==c){alert('Passwords do not match.');return}
+    const a=getAuth(); a.user=await sha256Hex(p); setAuth(a); toast('User account password saved.');
+  });
+}
+
+/* =====================================================================
+   GST RECOPRO SECURITY / ROLES
+   ===================================================================== */
+const AUTH_KEY='gstRecoPro_v2_auth';
+const SESSION_KEY='gstRecoPro_v2_session';
+const ADMIN_HASH='caec9032a6b7988a8c95f8eb6f45c7b217d4fb631a748de9a0e5346ffd1d30d7';
+const DEFAULT_USER_HASH='3e7c19576488862816f13b512cacf3e4ba97dd97243ea0bd6a2ad1642d86ba72';
+let currentUser=null;
+
+async function sha256Hex(text){
+  const buf=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(text));
+  return [...new Uint8Array(buf)].map(b=>b.toString(16).padStart(2,'0')).join('');
+}
+function getAuth(){
+  let a=readLocal(AUTH_KEY,null);
+  if(!a) a={admin:ADMIN_HASH,user:DEFAULT_USER_HASH};
+  return a;
+}
+function setAuth(a){writeLocal(AUTH_KEY,a)}
+function session(){return readLocal(SESSION_KEY,null)}
+function isAdmin(){return currentUser==='admin'}
+function requireAdmin(action){
+  if(!isAdmin()){toast('Admin permission required.');return false}
+  return action?!!action():true
+}
+function applyRoleUI(){
+  const admin=isAdmin();
+  document.getElementById('rolePill').textContent=admin?'ADMIN':'USER';
+  document.querySelectorAll('[data-admin-only]').forEach(el=>el.style.display=admin?'':'none');
+  const settings=document.querySelector('button[data-tab="tab-settings"]');
+  const tools=document.querySelector('button[data-tab="tab-tools"]');
+  if(settings)settings.style.display=admin?'':'none';
+  if(tools)tools.style.display='';
+  // User can import and reconcile only: hide delete controls and admin-only period controls.
+  document.getElementById('fileBanner').style.display=admin?'':'none';
+  document.querySelectorAll('.del-btn').forEach(b=>b.style.display=admin?'':'none');
+  const closeBtn=document.getElementById('closeBtn'), reopenBtn=document.getElementById('reopenBtn');
+  if(closeBtn)closeBtn.style.display=admin?'':'none';
+  if(reopenBtn && !admin)reopenBtn.style.display='none';
+}
+async function login(){
+  const u=document.getElementById('loginUser').value;
+  const p=document.getElementById('loginPassword').value;
+  const h=await sha256Hex(p), a=getAuth();
+  if(h!==a[u]){document.getElementById('loginError').textContent='Invalid username or password.';return}
+  currentUser=u; sessionStorage.setItem(SESSION_KEY,JSON.stringify({user:u,at:Date.now()}));
+  document.getElementById('loginPassword').value='';
+  document.getElementById('loginError').textContent='';
+  document.getElementById('authGate').style.display='none';
+  document.getElementById('moduleGate').style.display='flex';
+  document.querySelector('header').style.display='none';
+  document.getElementById('tabs').style.display='none';
+  document.getElementById('fileBanner').style.display='none';
+  document.querySelectorAll('.tab-panel').forEach(x=>x.style.display='none');
+  applyRoleUI();
+  refreshAllViews();
+  setTimeout(()=>{applyRoleUI();refreshFullTools();renderIMSWorkspace()},0);
+}
+function refreshHome(){
+  const twoB=(DB.twoB||[]), books=(DB.books||[]);
+  const set=(id,v)=>{const el=document.getElementById(id);if(el)el.textContent=v};
+  set('home2bCount',twoB.length); set('homeBooksCount',books.length);
+  set('homeMatchedCount',books.filter(r=>r.finalStatus==='MATCHED').length);
+  set('homePending2b',twoB.filter(r=>['NOT IN BOOKS','INVOICE NO. NOT MATCH'].includes(r.finalStatus)).length);
+  set('homePendingBooks',books.filter(r=>['NOT IN 2B','INVOICE NO. NOT MATCH'].includes(r.finalStatus)).length);
+  const periods=allPeriods(); set('homePeriod',periods.at(-1)?periodLabel(periods.at(-1)):'No period selected');
+  set('homeRecoStatus',books.length||twoB.length?'Data loaded':'Ready to import'); set('homeRefresh',new Date().toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'}));
+}
+function logoutApp(){
+  sessionStorage.removeItem(SESSION_KEY); currentUser=null;
+  document.getElementById('authGate').style.display='flex';
+  document.getElementById('moduleGate').style.display='none';
+  document.getElementById('loginPassword').value=''; document.getElementById('loginError').textContent='';
+  document.querySelector('header').style.display='none'; document.getElementById('tabs').style.display='none'; document.getElementById('fileBanner').style.display='none';
+  document.querySelectorAll('.tab-panel').forEach(x=>x.style.display='none');
+}
+function lockApp(){
+  sessionStorage.removeItem(SESSION_KEY); currentUser=null;
+  document.getElementById('authGate').style.display='flex';
+  document.getElementById('loginPassword').value='';
+  document.getElementById('loginError').textContent='';
+  // Return to first tab without clearing data.
+  document.querySelectorAll('.tab-panel').forEach(x=>x.style.display='none');
+  const first=document.getElementById('tab-home'); if(first)first.style.display='block';
+  document.querySelectorAll('#tabs button').forEach((b)=>b.classList.toggle('active',b.dataset.tab==='tab-home'));
+  try{window.close()}catch(e){}
+}
+function openPasswordDialog(){
+  if(!currentUser)return;
+  document.getElementById('passwordTarget').textContent='Change password for '+currentUser+'.';
+  document.getElementById('passwordModal').style.display='flex';
+}
+function closePasswordDialog(){document.getElementById('passwordModal').style.display='none';document.getElementById('passwordError').textContent=''}
+async function changeMyPassword(){
+  const cur=document.getElementById('currentPassword').value,nw=document.getElementById('newPassword').value,cf=document.getElementById('confirmPassword').value;
+  const err=document.getElementById('passwordError'),a=getAuth();
+  if(!cur||!nw){err.textContent='Enter all password fields.';return}
+  if(nw.length<8){err.textContent='New password must be at least 8 characters.';return}
+  if(nw!==cf){err.textContent='New password and confirmation do not match.';return}
+  if(await sha256Hex(cur)!==a[currentUser]){err.textContent='Current password is incorrect.';return}
+  a[currentUser]=await sha256Hex(nw);setAuth(a);closePasswordDialog();toast('Password changed successfully.');
+}
+function ensureAuth(){
+  const s=session();
+  if(s && (s.user==='admin'||s.user==='user')){currentUser=s.user;document.getElementById('authGate').style.display='none';document.getElementById('moduleGate').style.display='flex';document.querySelector('header').style.display='none';document.getElementById('tabs').style.display='none';document.getElementById('fileBanner').style.display='none';document.querySelectorAll('.tab-panel').forEach(x=>x.style.display='none');applyRoleUI();return true}
+  document.getElementById('authGate').style.display='flex';return false;
+}
+// Admin-only guards for sensitive operations.
+const _closePeriod=closePeriod,_reopenPeriod=reopenPeriod,_eraseData=eraseData,_restoreBackup=restoreBackup;
+closePeriod=function(){if(!isAdmin()){toast('Only Admin can close a period.');return}requestAdminVerification('Close Period','Enter Admin password to close and lock this period.',async()=>_closePeriod())};
+reopenPeriod=function(){if(!isAdmin()){toast('Only Admin can reopen a period.');return}requestAdminVerification('Reopen Period','Enter Admin password to reopen this period.',async()=>_reopenPeriod())};
+eraseData=function(scope){if(!isAdmin()){toast('Only Admin can erase data.');return}requestAdminVerification('Erase Data','Enter Admin password to confirm this destructive action.',async()=>_eraseData(scope))};
+restoreBackup=function(evt){if(!isAdmin()){toast('Only Admin can restore a backup.');evt.target.value='';return}requestAdminVerification('Restore Backup','Enter Admin password to restore the selected backup.',async()=>_restoreBackup(evt))};
+function openAdminPasswordManager(){ if(!isAdmin()){toast('Admin permission required.');return} openPasswordDialog(); }
+
+
+/* ===================== IMS MODULE ===================== */
+const IMS_KEY='gstRecoPro_ims_records_v1', IMS_BOOKS_KEY='gstRecoPro_ims_books_v1', IMS_CLOSED_KEY='gstRecoPro_ims_closed_v1';
+let IMS_DB={records:[],books:[],closed:{}};
+function loadIMSDB(){try{IMS_DB.records=JSON.parse(localStorage.getItem(IMS_KEY)||'[]');IMS_DB.books=JSON.parse(localStorage.getItem(IMS_BOOKS_KEY)||'[]');IMS_DB.closed=JSON.parse(localStorage.getItem(IMS_CLOSED_KEY)||'{}')}catch(e){IMS_DB={records:[],books:[],closed:{}}}}
+function saveIMSDB(){saveIMSLocalOnly();scheduleFileWrite();updateStorageInfo();}
+function updateIMSDataFileStatus(){const e=document.getElementById("imsDataFileStatus");if(!e)return;const connected=!!(fileHandle&&fileReady);e.textContent=connected?"🟢 Connected to the same GST_Recon_Data.json":"🟡 Local browser storage (connect GST_Recon_Data.json from the top bar)";}
+function imsPeriodKey(v){return String(v||'').slice(0,7)}
+function imsDocDate(r){return parseDateFlexible(r.docDate||r.invoiceDate||r.date||r.documentDate||'')}
+function imsPeriodLabel(p){if(!p)return '—';const [y,m]=p.split('-');return new Date(+y,+m-1,1).toLocaleString('en-IN',{month:'long',year:'numeric'})}
+function populateIMSPeriods(){
+  const sel=document.getElementById('imsPeriod');if(!sel)return;
+  const current=sel.value;
+  // Use the same native month picker style as the 2B/Books period controls.
+  // Keep a broad range so older IMS periods and future working months remain selectable.
+  sel.min='2024-04';
+  const now=new Date();
+  const future=new Date(now.getFullYear(),now.getMonth()+6,1);
+  sel.max=future.toISOString().slice(0,7);
+  if(current){sel.value=current;return;}
+  // First opening defaults to the current month, but the user can select any month in the picker.
+  sel.value=now.toISOString().slice(0,7);
+}
+
+function normalizeIMSHeader(v){
+  // GST portal/Tally exports often contain NBSPs, slashes, dots, parentheses and line breaks.
+  // Normalize all of them so header detection is format-tolerant.
+  return String(v??'')
+    .replace(/\u00a0/g,' ')
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g,'');
+}
+function readIMSWorkbook(arrayBuffer){
+  // Some GST IMS exports have an incorrect worksheet <dimension> (e.g. A1:S11
+  // even though hundreds of rows are physically present). SheetJS otherwise reads
+  // only the advertised range. nodim:true forces it to use the actual cell addresses.
+  return XLSX.read(arrayBuffer,{type:'array',cellDates:true,nodim:true,raw:true});
+}
+function imsFindRow(rows,predicate,maxRows=40){
+  const limit=Math.min(rows.length,maxRows);
+  for(let i=0;i<limit;i++){
+    if(predicate((rows[i]||[]).map(x=>normalizeIMSHeader(x)),rows[i]||[])) return i;
+  }
+  return -1;
+}
+
+function isIMSClosed(p){return !!(p&&IMS_DB.closed[p])}
+function updateIMSLock(){
+  const p=document.getElementById('imsPeriod')?.value||'';
+  const box=document.getElementById('imsLockBox');
+  const title=document.getElementById('imsLockTitle');
+  const state=document.getElementById('imsLockState');
+  const locked=isIMSClosed(p);
+  if(title) title.textContent=p ? imsPeriodLabel(p)+' IMS' : 'No period selected';
+  if(state) state.textContent=!p ? 'Select an IMS period to begin.' : (locked ? '🔒 FROZEN — imports and decisions are locked. Admin can reopen this period.' : '🟢 LIVE — imports and decisions are allowed.');
+  if(box) box.classList.toggle('locked',locked);
+  document.querySelectorAll('[data-ims-admin]').forEach(btn=>{btn.style.display=isAdmin()?'':'none';});
+}
+function normIMS(v){return String(v??'').trim().toUpperCase().replace(/\s+/g,'')}
+function imsDocGroup(type){const t=String(type||'').toUpperCase();if(t.includes('CN'))return 'CN';if(t.includes('DN'))return 'DN';return 'INV'}
+function imsBookDate(r){return parseDateFlexible(r.docDate||r.date||'')}
+function imsBookRowsForPeriod(p){return (IMS_DB.books||[]).filter(r=>imsBookDate(r)?.slice(0,7)===p)}
+function imsMatchOne(ir, books){
+  const ig=normIMS(ir.gstin), ino=normIMS(ir.docNo), ia=Number(ir.amount||0), it=imsDocGroup(ir.sheetType);
+  const candidates=books.filter(b=>normIMS(b.gstin)===ig && imsDocGroup(b.docType||b.sheetType)===it);
+  const keys=[ino,normIMS(ir.originalDocNo),normIMS(ir.revisedDocNo)].filter(Boolean);const exactNo=candidates.find(b=>keys.includes(normIMS(b.docNo)));
+  if(exactNo){const diff=Math.abs(Number(exactNo.amount||0)-ia);return diff<0.01?{status:'MATCHED',book:exactNo}:{status:'INVOICE AMOUNT NOT MATCHED',book:exactNo}}
+  const amountMatch=candidates.find(b=>Math.abs(Number(b.amount||0)-ia)<0.01);
+  if(amountMatch)return {status:'INVOICE NO. NOT MATCH',book:amountMatch};
+  if(candidates.length)return {status:'MISMATCH',book:candidates[0]};
+  return {status:'NOT IN BOOKS',book:null};
+}
+function computeIMSMatching(){
+  const allBooks=IMS_DB.books||[];
+  const periods=[...new Set([...(IMS_DB.records||[]).map(r=>imsDocDate(r)?.slice(0,7)).filter(Boolean),...allBooks.map(r=>imsBookDate(r)?.slice(0,7)).filter(Boolean)])];
+  periods.forEach(p=>{
+    const books=allBooks.filter(b=>imsBookDate(b)?.slice(0,7)===p);
+    const prevBooks=(DB.books||[]).filter(b=>b.finalStatus==='NOT IN 2B');
+    IMS_DB.records.filter(r=>imsDocDate(r)?.slice(0,7)===p || r.previous2BException).forEach(r=>{
+      let pool=books;
+      if(r.previous2BException){
+        const old=prevBooks.filter(b=>normIMS(b.gstin)===normIMS(r.gstin) && (normIMS(b.docNo)===normIMS(r.docNo)||normIMS(b.docNo)===normIMS(r.originalDocNo)||normIMS(b.docNo)===normIMS(r.revisedDocNo)));
+        if(old.length) pool=old.map(b=>({id:'prev_'+b.id,gstin:b.gstin,docNo:b.docNo,docType:b.vchType||'Invoice',amount:(Number(b.taxable)||0)+(Number(b.igst)||0)+(Number(b.cgst)||0)+(Number(b.sgst)||0)}));
+      }
+      const m=imsMatchOne(r,pool);r.matchStatus=m.status;r.matchedBookId=m.book?.id||'';r.matchBookDocNo=m.book?.docNo||'';r.recoveryMatch=!!r.previous2BException;
+    });
+  });
+}
+function imsCurrentRecords(){
+  const p=document.getElementById('imsPeriod')?.value;if(!p)return [];
+  const prevNot2B=(DB.books||[]).filter(r=>r.finalStatus==='NOT IN 2B');
+  const ims=IMS_DB.records.filter(r=>{const d=imsDocDate(r);if(d&&d.slice(0,7)===p)return true;if(r.previous2BException&&prevNot2B.some(b=>normIMS(b.gstin)===normIMS(r.gstin)&&[b.docNo,r.docNo,r.originalDocNo,r.revisedDocNo].filter(Boolean).map(normIMS).includes(normIMS(b.docNo))))return true;return false});
+  const books=imsBookRowsForPeriod(p);
+  const matchedBookIds=new Set();
+  ims.forEach(r=>{if(r.matchedBookId)matchedBookIds.add(String(r.matchedBookId));});
+  const synthetic=books.filter(b=>!matchedBookIds.has(String(b.id))).map(b=>({id:'book_'+b.id,_synthetic:true,sheetType:b.docType||'B2B',docType:b.docType||'Invoice',gstin:b.gstin,party:b.party,docNo:b.docNo,docDate:b.docDate,amount:b.amount,matchStatus:'NOT IN IMS',decision:'PENDING',bookId:b.id}));
+  return ims.concat(synthetic);
+}
+function renderIMSWorkspace(){populateIMSPeriods();updateIMSLock();computeIMSMatching();const rows=imsCurrentRecords();const set=(id,v)=>{const e=document.getElementById(id);if(e)e.textContent=v};set('imsTotal',rows.length);set('imsMatched',rows.filter(r=>r.matchStatus==='MATCHED').length);set('imsNotBooks',rows.filter(r=>r.matchStatus==='NOT IN BOOKS').length);set('imsIssues',rows.filter(r=>['INVOICE NO. NOT MATCH','INVOICE AMOUNT NOT MATCHED','MISMATCH'].includes(r.matchStatus)).length);set('imsPending',rows.filter(r=>!r.decision||r.decision==='PENDING').length);set('imsNotIMS',rows.filter(r=>r.matchStatus==='NOT IN IMS').length);renderIMSTable()}
+function setIMSNote(id,v){
+  const p=document.getElementById('imsPeriod')?.value||'';
+  if(isIMSClosed(p)){toast('IMS period is frozen. Admin must reopen it first.');renderIMSTable();return}
+  const r=IMS_DB.records.find(x=>String(x.id)===String(id)); if(!r)return;
+  r.note=String(v??''); r.noteAt=new Date().toISOString(); r.noteBy=currentUser||'unknown';
+  saveIMSDB();
+}
+function imsTableFilterValue(key){return String(document.querySelector('#imsTable .ims-col-filter[data-col="'+key+'"]')?.value||'').trim().toLowerCase()}
+function renderIMSTable(){
+  const el=document.getElementById('imsTable');if(!el)return;
+  const p=document.getElementById('imsPeriod')?.value||'';
+  let rows=imsCurrentRecords();
+  const df=document.getElementById('imsDocFilter')?.value||'ALL';
+  const sf=document.getElementById('imsDecisionFilter')?.value||'ALL';
+  const q=(document.getElementById('imsSearch')?.value||'').trim().toLowerCase();
+  if(df!=='ALL')rows=rows.filter(r=>r.sheetType===df);
+  if(sf!=='ALL')rows=rows.filter(r=>(r.matchStatus===sf||r.decision===sf));
+  if(q)rows=rows.filter(r=>[r.gstin,r.party,r.docNo,r.originalDocNo,r.revisedDocNo,r.docType,r.invoiceType,r.matchBookDocNo,r.sourceSheet,r.portalStatus,r.matchStatus,r.decision].join(' ').toLowerCase().includes(q));
+
+  // Same Excel-like two-row header/filter style as the 2B and Books tables.
+  // Important IMS-only fields are retained so no imported information is hidden.
+  const filterDefs=[
+    ['period','Period'],['type','Type'],['gstin','GSTIN'],['party','Trade Name'],['docNo','Doc No.'],['originalDocNo','Original Doc No.'],['date','Date'],
+    ['taxable','Taxable'],['igst','IGST'],['cgst','CGST'],['sgst','SGST'],['cess','Cess'],['invoiceValue','Invoice Value'],
+    ['portalStatus','Portal Status'],['matchBookDocNo','Books Doc No.'],['matchStatus','Auto Status'],['decision','Decision']
+  ];
+  const getVal=(r,k)=>{
+    if(k==='period')return periodLabel(imsDocDate(r)?.slice(0,7));
+    if(k==='type')return r.sheetType||r.docType||'';
+    if(k==='gstin')return r.gstin||'';
+    if(k==='party')return r.party||'';
+    if(k==='docNo')return r.docNo||'';
+    if(k==='originalDocNo')return r.originalDocNo||'';
+    if(k==='date')return fmtDate(imsDocDate(r));
+    if(k==='taxable')return r.taxable??'';
+    if(k==='igst')return r.igst??'';
+    if(k==='cgst')return r.cgst??'';
+    if(k==='sgst')return r.sgst??'';
+    if(k==='cess')return r.cess??'';
+    if(k==='invoiceValue')return r.amount??'';
+    if(k==='portalStatus')return r.portalStatus||'';
+    if(k==='matchBookDocNo')return r.matchBookDocNo||'';
+    if(k==='matchStatus')return r.matchStatus||'';
+    if(k==='decision')return r.decision||'PENDING';
+    return '';
+  };
+  const saved={};filterDefs.forEach(([k])=>saved[k]=imsTableFilterValue(k));
+  rows=rows.filter(r=>filterDefs.every(([k])=>{const f=saved[k];return !f||String(getVal(r,k)).toLowerCase().includes(f)}));
+
+  const locked=isIMSClosed(p);
+  const head='<tr>'+filterDefs.map(([,label])=>'<th>'+label+'</th>').join('')+'<th>Note</th></tr>';
+  const filterRow='<tr>'+filterDefs.map(([k])=>'<th><input class="ims-col-filter" data-col="'+k+'" value="'+escapeHtml(saved[k]||'')+'" placeholder="search…" style="width:100%;font-size:11px;padding:3px 4px;box-sizing:border-box;"></th>').join('')+'<th></th></tr>';
+  if(!rows.length){el.innerHTML='<div class="ims-empty">No IMS records for the selected filters.</div>';return}
+
+  const body=rows.map(r=>{
+    const decision=r._synthetic?'—':`<select ${locked?'disabled':''} onchange="setIMSDecision('${escapeHtml(r.id)}',this.value)"><option value="PENDING" ${(!r.decision||r.decision==='PENDING')?'selected':''}>Pending</option><option value="ACCEPTED" ${r.decision==='ACCEPTED'?'selected':''}>Accept</option><option value="REJECTED" ${r.decision==='REJECTED'?'selected':''}>Reject</option></select>`;
+    const note=r._synthetic?'—':`<input class="ims-note-input" ${locked?'disabled':''} value="${escapeHtml(r.note||'')}" placeholder="Note" onchange="setIMSNote('${escapeHtml(r.id)}',this.value)">`;
+    const cells=[
+      periodLabel(imsDocDate(r)?.slice(0,7)),r.sheetType||r.docType||'',r.gstin||'',r.party||'',r.docNo||'',r.originalDocNo||'',fmtDate(imsDocDate(r)),
+      fmtNum(r.taxable||0),fmtNum(r.igst||0),fmtNum(r.cgst||0),fmtNum(r.sgst||0),fmtNum(r.cess||0),fmtINR(r.amount||0),
+      r.portalStatus||'',r.matchBookDocNo||'',r.matchStatus||'PENDING',decision,note
+    ];
+    return '<tr>'+cells.map((v,i)=>'<td class="'+(i>=7&&i<=12?'num':'txt')+'">'+(i===15?'<span class="status">'+escapeHtml(String(v))+'</span>':escapeHtml(String(v)))+'</td>').join('')+'</tr>';
+  }).join('');
+  el.innerHTML='<div class="table-wrap ims-table-wrap"><table><thead>'+head+filterRow+'</thead><tbody>'+body+'</tbody></table></div>';
+  el.querySelectorAll('.ims-col-filter').forEach(inp=>inp.addEventListener('input',()=>renderIMSTable()));
+}
+function setIMSDecision(id,v){const p=document.getElementById('imsPeriod')?.value;if(isIMSClosed(p)){toast('IMS period is frozen. Admin must reopen it first.');renderIMSTable();return}const r=IMS_DB.records.find(x=>String(x.id)===String(id));if(!r)return;r.decision=v;r.decisionAt=new Date().toISOString();r.decisionBy=currentUser||'unknown';saveIMSDB();renderIMSWorkspace();toast('IMS decision saved: '+v)}
+function closeIMSPeriod(){if(!isAdmin()){toast('Only Admin can close an IMS period.');return}const p=document.getElementById('imsPeriod')?.value;if(!p)return toast('Select an IMS period first.');if(isIMSClosed(p))return toast('This IMS period is already frozen.');if(!confirm('Close and freeze '+imsPeriodLabel(p)+' IMS? After closing, imports and decisions for this period will be locked.'))return;computeIMSMatching();IMS_DB.closed[p]={closedAt:new Date().toISOString(),closedBy:currentUser,snapshot:imsCurrentRecords()};saveIMSDB();renderIMSWorkspace();toast('IMS '+imsPeriodLabel(p)+' is now frozen.')}
+function reopenIMSPeriod(){if(!isAdmin()){toast('Only Admin can reopen an IMS period.');return}const p=document.getElementById('imsPeriod')?.value;if(!p)return toast('Select an IMS period first.');if(!isIMSClosed(p))return toast('This IMS period is already live.');if(!confirm('Reopen '+imsPeriodLabel(p)+' IMS?'))return;delete IMS_DB.closed[p];saveIMSDB();renderIMSWorkspace();toast('IMS '+imsPeriodLabel(p)+' reopened.')}
+function importIMSBooksFile(input){
+  const f=input.files?.[0];
+  if(!f)return;
+  const p=document.getElementById('imsPeriod')?.value;
+  if(!p){toast('Select an IMS period before importing Books.');input.value='';return}
+  if(isIMSClosed(p)){toast('IMS period is frozen. Admin must reopen it before importing Books.');input.value='';return}
+  if(typeof XLSX==='undefined'){toast('Excel reader is unavailable.');input.value='';return}
+  const rd=new FileReader();
+  rd.onload=e=>{
+    try{
+      const ext=f.name.split('.').pop().toLowerCase();
+      let matrix;
+      if(ext==='csv') matrix=splitPasteRows(String(e.target.result));
+      else { const wb=readIMSWorkbook(e.target.result); matrix=XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]],{header:1,raw:true,defval:''}); }
+      // Find the real Tally header row; the workbook has company/report information above it.
+      const headerIdx=matrix.findIndex(r=>{
+        const a=(r||[]).map(x=>normalizeIMSHeader(x));
+        return a.includes('date') && a.includes('particulars') && a.includes('partygstinuin') && a.includes('vchtype') && a.includes('docno');
+      });
+      if(headerIdx<0) throw new Error('Books format not recognised. Expected Date / Particulars / Party GSTIN-UIN / Vch Type / Doc No. headers.');
+      const h=matrix[headerIdx].map(x=>normalizeIMSHeader(x));
+      const idx=name=>h.indexOf(normalizeIMSHeader(name));
+      const findCol=(...names)=>{for(const n of names){const nn=normalizeIMSHeader(n);const j=h.findIndex(x=>x===nn||x.startsWith(nn));if(j>=0)return j}return -1};
+      const iDate=idx('Date'), iParty=idx('Particulars'), iGstin=idx('Party GSTIN/UIN'),
+            iVchType=idx('Vch Type'), iVchNo=idx('Vch No.'), iDocNo=idx('Doc No.'), iDocDate=idx('Doc'),
+            iTaxable=findCol('Taxable Value','Taxable'), iIGST=idx('IGST'), iCGST=idx('CGST'),
+            iSGST=(h.indexOf('sgst/utgst')>=0?h.indexOf('sgst/utgst'):h.indexOf('sgst')), iCess=idx('Cess'), iTaxTotal=idx('Tax');
+      // The second header row contains the actual "Date" and "Amount" sublabels.
+      const sub=(matrix[headerIdx+1]||[]).map(x=>normalizeIMSHeader(x));
+      const subDocDate=sub.indexOf('date');
+      const subTaxable=sub.indexOf('amount');
+      let added=0, skipped=0, duplicate=0;
+      for(let ri=headerIdx+2;ri<matrix.length;ri++){
+        const c=matrix[ri]||[];
+        if(!c.length || c.every(x=>str(x)==='')) continue;
+        const docDate=parseDateFlexible(c[subDocDate>=0?subDocDate:iDocDate]);
+        if(!docDate || docDate.slice(0,7)!==p){skipped++;continue;}
+        const r={
+          id:'imsbook_'+Date.now()+'_'+Math.random().toString(36).slice(2,8), period:p,
+          date:parseDateFlexible(c[iDate]), particulars:str(c[iParty]), party:str(c[iParty]), gstin:str(c[iGstin]).trim().toUpperCase(),
+          vchType:str(c[iVchType])||'Purchase', vchNo:str(c[iVchNo]), docNo:str(c[iDocNo]), docDate,
+          amount:(iTaxTotal>=0 ? parseNum(c[iTaxable>=0?iTaxable:subTaxable]) + parseNum(c[iTaxTotal]) : parseNum(c[iTaxable>=0?iTaxable:subTaxable]) + parseNum(c[iIGST]) + parseNum(c[iCGST]) + parseNum(c[iSGST]) + parseNum(c[iCess])),
+          taxable:parseNum(c[iTaxable>=0?iTaxable:subTaxable]), igst:parseNum(c[iIGST]), cgst:parseNum(c[iCGST]), sgst:parseNum(c[iSGST]), cess:parseNum(c[iCess])
+        };
+        if(!r.gstin && !r.docNo) {skipped++;continue;}
+        const dup=IMS_DB.books.some(x=>normIMS(x.gstin)===normIMS(r.gstin)&&normIMS(x.docNo)===normIMS(r.docNo)&&imsBookDate(x)===docDate&&imsDocGroup(x.docType||x.vchType)===imsDocGroup(r.vchType));
+        if(dup){duplicate++;continue;}
+        IMS_DB.books.push(r); added++;
+      }
+      computeIMSMatching();saveIMSDB();renderIMSWorkspace();
+      toast(added+' IMS Books records imported; '+skipped+' outside/invalid rows ignored; '+duplicate+' duplicates skipped.');
+      input.value='';
+    }catch(err){console.error(err);toast('IMS Books import failed: '+err.message);input.value=''}
+  };
+  if(f.name.toLowerCase().endsWith('.csv')) rd.readAsText(f); else rd.readAsArrayBuffer(f);
+}
+
+function importIMSFile(input){
+  const f=input.files?.[0];
+  if(!f)return;
+  const p=document.getElementById('imsPeriod')?.value;
+  if(!p){toast('Select an IMS period before importing.');input.value='';return}
+  if(isIMSClosed(p)){toast('IMS period is frozen. Admin must reopen it before importing.');input.value='';return}
+  if(typeof XLSX==='undefined'){toast('Excel reader is unavailable.');input.value='';return}
+  const rd=new FileReader();
+  rd.onload=e=>{
+    try{
+      const wb=readIMSWorkbook(e.target.result);
+      let added=0,ignored=0,duplicate=0,invalid=0,scanned=0,periodRows=0;
+      const sheetAdded={B2B:0,B2BA:0,'B2B-DN':0,'B2B-DNA':0,'B2B-CN':0,'B2B-CNA':0};
+      const sheetScanned={};
+      const sheetPeriod={};
+      const typeMap={'B2B':'B2B','B2BA':'B2BA','B2B-DN':'B2B-DN','B2B-DNA':'B2B-DNA','B2B-CN':'B2B-CN','B2B-CNA':'B2B-CNA'};
+      const cleanSheetName=v=>String(v||'').trim().toUpperCase().replace(/\s+/g,'');
+
+      const parseIMSRow=(type,c,sn,headerIdx,rows)=>{
+        let rec;
+        if(type==='B2BA'||type==='B2B-DNA'||type==='B2B-CNA'){
+          // Actual GST IMS B2BA layout:
+          // Original No, Original Date, GSTIN, Party | Revised No, Type, Date, Value | Status | ...
+          const d=parseDateFlexible(c[6]);
+          rec={
+            sheetType:type,docType:'Invoice',gstin:str(c[2]).trim().toUpperCase(),party:str(c[3]),
+            docNo:str(c[4]),originalDocNo:str(c[0]),revisedDocNo:str(c[4]),docDate:d,
+            amount:parseNum(c[7]),invoiceValue:parseNum(c[7]),taxable:parseNum(c[10]),
+            igst:parseNum(c[16]),cgst:parseNum(c[17]),sgst:parseNum(c[18]),cess:parseNum(c[19]),
+            invoiceType:str(c[5]),placeOfSupply:str(c[9]),sourceSheet:sn,portalStatus:str(c[8]),remarks:str(c[24]||''),source:str(c[25]||''),sourceReturnPeriod:str(c[26]||''),sourceFilingStatus:str(c[27]||''),sourceFilingDate:str(c[28]||''),filingFrequency:str(c[29]||''),rawRow:Array.from(c||[])
+          };
+        }else{
+          // Actual GST IMS B2B/DN/CN layout:
+          // GSTIN, Party, Document No, Supply Type, Document Date, Document Value, Status,
+          // Place, Taxable, IGST, CGST, SGST/UTGST, Cess...
+          const d=parseDateFlexible(c[4]);
+          const isCN=type.includes('CN'), isDN=type.includes('DN');
+          rec={
+            sheetType:type,docType:isCN?'Credit Note':(isDN?'Debit Note':'Invoice'),
+            gstin:str(c[0]).trim().toUpperCase(),party:str(c[1]),docNo:str(c[2]),
+            originalDocNo:'',revisedDocNo:'',docDate:d,amount:parseNum(c[5]),invoiceValue:parseNum(c[5]),taxable:parseNum(c[8]),
+            igst:parseNum(c[9]),cgst:parseNum(c[10]),sgst:parseNum(c[11]),cess:parseNum(c[12]),
+            invoiceType:str(c[3]),placeOfSupply:str(c[7]),sourceSheet:sn,portalStatus:str(c[6]),remarks:str(c[20]||''),source:str(c[21]||''),sourceReturnPeriod:str(c[22]||''),sourceFilingStatus:str(c[23]||''),sourceFilingDate:str(c[24]||''),filingFrequency:str(c[25]||''),rawRow:Array.from(c||[])
+          };
+        }
+        return rec;
+      };
+
+      wb.SheetNames.forEach(sn=>{
+        const type=typeMap[cleanSheetName(sn)];
+        if(!type)return;
+        const rows=XLSX.utils.sheet_to_json(wb.Sheets[sn],{header:1,raw:true,defval:'',blankrows:true});
+        const headerIdx=imsFindRow(rows,(a)=>a.includes('gstinofsupplier') && (a.includes('tradelegalname')||a.includes('tradelegalname')));
+        if(headerIdx<0){
+          console.warn('IMS header not found:',sn,rows.slice(0,10));
+          return;
+        }
+        sheetScanned[type]=(sheetScanned[type]||0);
+        sheetPeriod[type]=(sheetPeriod[type]||0);
+        // Two header rows are used by GST IMS. Start after the subheader.
+        const dataStart=headerIdx+2;
+        for(let i=dataStart;i<rows.length;i++){
+          const c=rows[i]||[];
+          if(!c.length || c.every(x=>str(x)===''))continue;
+          scanned++;sheetScanned[type]++;
+          const rec=parseIMSRow(type,c,sn,headerIdx,rows);
+          if(!rec.gstin && !rec.docNo){invalid++;continue}
+          const inPeriod=!!rec.docDate && rec.docDate.slice(0,7)===p;
+          const oldException=(DB.books||[]).some(b=>b.finalStatus==='NOT IN 2B'&&normIMS(b.gstin)===normIMS(rec.gstin)&&(
+            normIMS(b.docNo)===normIMS(rec.docNo)||normIMS(b.docNo)===normIMS(rec.originalDocNo)||normIMS(b.docNo)===normIMS(rec.revisedDocNo)
+          ));
+          if(inPeriod){periodRows++;sheetPeriod[type]++}
+          if(!inPeriod && !oldException){ignored++;continue}
+          if(!rec.docDate){invalid++;continue}
+          rec.previous2BException=!inPeriod && oldException;
+          const key=(type+'|'+normIMS(rec.gstin)+'|'+normIMS(rec.docNo||rec.revisedDocNo||rec.originalDocNo)+'|'+rec.docDate).toUpperCase();
+          const dup=IMS_DB.records.some(x=>{
+            const xkey=(String(x.sheetType||'')+'|'+normIMS(x.gstin)+'|'+normIMS(x.docNo||x.revisedDocNo||x.originalDocNo)+'|'+imsDocDate(x)).toUpperCase();
+            return xkey===key;
+          });
+          if(dup){duplicate++;continue}
+          rec.id='ims_'+Date.now()+'_'+Math.random().toString(36).slice(2,8);
+          rec.matchStatus='PENDING';rec.decision='PENDING';
+          IMS_DB.records.push(rec);added++;sheetAdded[type]++;
+        }
+      });
+      computeIMSMatching();saveIMSDB();renderIMSWorkspace();
+      const detail=Object.entries(sheetAdded).filter(([,n])=>n>0).map(([k,n])=>k+': '+n).join(' | ');
+      const scannedDetail=Object.entries(sheetScanned).filter(([,n])=>n>0).map(([k,n])=>k+': '+n).join(' | ');
+      const periodDetail=Object.entries(sheetPeriod).filter(([,n])=>n>0).map(([k,n])=>k+': '+n).join(' | ');
+      toast(p+' IMS: '+added+' imported'+(detail?' ('+detail+')':'')+' | '+duplicate+' duplicates | '+ignored+' outside month/recovery not eligible | '+invalid+' invalid | scanned '+scanned+(scannedDetail?' ('+scannedDetail+')':'')+' | selected month '+periodRows+(periodDetail?' ('+periodDetail+')':'')+'.');
+      input.value='';
+    }catch(err){console.error(err);toast('IMS import failed: '+err.message);input.value=''}
+  };
+  rd.readAsArrayBuffer(f);
+}
+function enterModule(m){document.getElementById('moduleGate').style.display='none';if(m==='ims'){document.querySelector('header').style.display='none';document.getElementById('tabs').style.display='none';document.getElementById('fileBanner').style.display='none';document.querySelectorAll('.tab-panel').forEach(x=>x.style.display='none');document.getElementById('tab-ims').style.display='block';renderIMSWorkspace();return}document.querySelector('header').style.display='';document.getElementById('tabs').style.display='';document.getElementById('fileBanner').style.display='';document.querySelectorAll('.tab-panel').forEach(x=>x.style.display='none');document.getElementById('tab-home').style.display='block';document.querySelectorAll('#tabs button').forEach(b=>b.classList.toggle('active',b.dataset.tab==='tab-home'));applyRoleUI();refreshAllViews()}
+function backToModules(){document.getElementById('tab-ims').style.display='none';document.querySelector('header').style.display='';document.getElementById('tabs').style.display='';document.getElementById('moduleGate').style.display='flex';}
+
+/* =====================================================================
+   INIT
+   ===================================================================== */
+loadDB();
+loadIMSDB();
+recomputeAll(DB.twoB, DB.books);
+refreshAllViews();
+renderFileBanner();
+initFileStorage();
+ensureAuth();
+</script>
+
+<script>
+/* ===================== IMS PRO REPORTS / CONTROLS ===================== */
+function imsEnsureExtraPanel(){
+  if(document.getElementById('imsProPanel')) return;
+  const host=document.getElementById('imsTable')?.closest('.card');
+  if(!host) return;
+  const box=document.createElement('div');
+  box.id='imsProPanel';box.className='card';box.style.marginTop='16px';
+  box.innerHTML=`<h3>IMS Controls & Reports</h3><div class="row ims-pro-nav">
+  <button class="btn secondary" onclick="renderIMSSupplierSummary()">Supplier-wise IMS</button>
+  <button class="btn secondary" onclick="acceptAllIMSMatched()">Accept All Matched</button>
+  <button class="btn secondary" onclick="renderIMSAmendments()">Amendment Tracker</button>
+  <button class="btn secondary" onclick="renderIMSRecovery()">Previous 2B Recovery</button>
+  <button class="btn secondary" onclick="exportIMSFullReport()">Export IMS Report</button></div>
+  <div id="imsProReport" style="margin-top:14px"></div>`;
+  host.parentNode.insertBefore(box,host.nextSibling);
+}
+function imsProRows(){const p=document.getElementById('imsPeriod')?.value||'';computeIMSMatching();return p?imsCurrentRecords():[]}
+function renderIMSSupplierSummary(){
+  imsEnsureExtraPanel();
+  const rows=imsProRows(),m=new Map();
+  rows.forEach(r=>{
+    const k=normIMS(r.gstin)+'|'+(r.party||'');
+    if(!m.has(k))m.set(k,{party:r.party||'',gstin:r.gstin||'',total:0,matched:0,accepted:0,rejected:0,pending:0,issues:0,itc:0});
+    const x=m.get(k);x.total++;x.itc+=Number(r.amount)||0;
+    if(r.matchStatus==='MATCHED')x.matched++;
+    if(r.decision==='ACCEPTED')x.accepted++;else if(r.decision==='REJECTED')x.rejected++;else x.pending++;
+    if(['INVOICE NO. NOT MATCH','INVOICE AMOUNT NOT MATCHED','MISMATCH','NOT IN BOOKS','NOT IN IMS'].includes(r.matchStatus))x.issues++;
+  });
+  const a=[...m.values()].sort((x,y)=>y.itc-x.itc);
+  document.getElementById('imsProReport').innerHTML='<div class="table-wrap"><table><thead><tr><th>Party</th><th>GSTIN</th><th>Total</th><th>Matched</th><th>Accepted</th><th>Rejected</th><th>Pending</th><th>Issues</th><th>ITC / Amount</th></tr></thead><tbody>'+(a.map(x=>`<tr><td>${escapeHtml(x.party)}</td><td>${escapeHtml(x.gstin)}</td><td>${x.total}</td><td>${x.matched}</td><td>${x.accepted}</td><td>${x.rejected}</td><td>${x.pending}</td><td>${x.issues}</td><td>${fmtINR(x.itc)}</td></tr>`).join('')||'<tr><td colspan="9">No records.</td></tr>')+'</tbody></table></div>';
+}
+function acceptAllIMSMatched(){
+  if(typeof isAdmin==='function'&&!isAdmin()){toast('Only Admin can perform bulk IMS decisions.');return}
+  const p=document.getElementById('imsPeriod')?.value;if(!p)return toast('Select IMS period first.');
+  if(isIMSClosed(p))return toast('IMS period is frozen.');
+  if(!confirm('Accept all MATCHED IMS records for this period?'))return;
+  let n=0;const ids=new Set(imsCurrentRecords().filter(r=>!r._synthetic&&r.matchStatus==='MATCHED').map(r=>String(r.id)));
+  IMS_DB.records.filter(r=>ids.has(String(r.id))).forEach(r=>{r.decision='ACCEPTED';r.decisionAt=new Date().toISOString();r.decisionBy=currentUser||'unknown';n++});
+  saveIMSDB();renderIMSWorkspace();toast(n+' matched IMS records accepted.');
+}
+function renderIMSAmendments(){
+  imsEnsureExtraPanel();
+  const rows=imsProRows().filter(r=>['B2BA','B2B-DNA','B2B-CNA'].includes(r.sheetType));
+  document.getElementById('imsProReport').innerHTML='<div class="table-wrap"><table><thead><tr><th>Type</th><th>GSTIN</th><th>Original No.</th><th>Revised No.</th><th>Date</th><th>Amount</th><th>Status</th><th>Decision</th></tr></thead><tbody>'+(rows.map(r=>`<tr><td>${escapeHtml(r.sheetType)}</td><td>${escapeHtml(r.gstin||'')}</td><td>${escapeHtml(r.originalDocNo||'')}</td><td>${escapeHtml(r.revisedDocNo||r.docNo||'')}</td><td>${escapeHtml(fmtDate(imsDocDate(r)))}</td><td>${fmtINR(r.amount||0)}</td><td>${escapeHtml(r.matchStatus||'PENDING')}</td><td>${escapeHtml(r.decision||'PENDING')}</td></tr>`).join('')||'<tr><td colspan="8">No amendments for this period.</td></tr>')+'</tbody></table></div>';
+}
+function renderIMSRecovery(){
+  imsEnsureExtraPanel();
+  const p=document.getElementById('imsPeriod')?.value||'',old=(DB.books||[]).filter(r=>r.finalStatus==='NOT IN 2B');
+  document.getElementById('imsProReport').innerHTML='<div class="table-wrap"><table><thead><tr><th>Previous 2B Doc</th><th>GSTIN</th><th>Party</th><th>IMS Doc</th><th>IMS Date</th><th>Amount</th><th>Recovery Status</th></tr></thead><tbody>'+(old.map(b=>{
+    const hit=IMS_DB.records.find(r=>{const d=imsDocDate(r);const nums=[r.docNo,r.originalDocNo,r.revisedDocNo].filter(Boolean).map(normIMS);return normIMS(r.gstin)===normIMS(b.gstin)&&nums.includes(normIMS(b.docNo))&&(!p||d?.slice(0,7)===p||r.previous2BException)});
+    return `<tr><td>${escapeHtml(b.docNo||'')}</td><td>${escapeHtml(b.gstin||'')}</td><td>${escapeHtml(b.particulars||b.party||'')}</td><td>${escapeHtml(hit?.docNo||hit?.revisedDocNo||'')}</td><td>${escapeHtml(hit?fmtDate(imsDocDate(hit)):'')}</td><td>${fmtINR(hit?.amount||b.taxable||0)}</td><td>${hit?'FOUND IN IMS':'NOT FOUND'}</td></tr>`;
+  }).join('')||'<tr><td colspan="7">No previous 2B exceptions.</td></tr>')+'</tbody></table></div>';
+}
+function exportIMSFullReport(){
+  const rows=imsProRows();
+  const out=rows.map(r=>[r.sheetType,r.gstin,r.party,r.originalDocNo||'',r.revisedDocNo||r.docNo||'',fmtDate(imsDocDate(r)),r.taxable||0,r.igst||0,r.cgst||0,r.sgst||0,r.cess||0,r.amount||0,r.portalStatus||'',r.matchBookDocNo||'',r.matchStatus||'',r.decision||'PENDING',r.note||'']);
+  if(typeof downloadHtmlExcel==='function')downloadHtmlExcel('GST_IMS_Detailed_Report.xlsx','IMS Detailed Report',['Type','GSTIN','Party','Original No','Revised / Document No','Date','Taxable','IGST','CGST','SGST','Cess','Invoice Value','Portal Status','Books Doc No','Auto Status','Decision','Note'],out);else toast('Excel export is unavailable.');
+}
+(function(){
+  const oldRender=window.renderIMSWorkspace;
+  if(typeof oldRender==='function')window.renderIMSWorkspace=function(){oldRender();setTimeout(imsEnsureExtraPanel,0)};
+})();
+</script>
+
+<script>
+/* GST RecoPro Supabase client configuration.
+   Production values are supplied by the Netlify /api/config function.
+   No Supabase URL or key is embedded in the static HTML. */
+window.GST_RECOPRO_SUPABASE_CONFIG = { url: "", publishableKey: "" };
+</script>
+
+<script>
+/* =====================================================================
+   GST RECOPRO CLOUD / MULTI-COMPANY LAYER
+   ===================================================================== */
+(function(){
+  'use strict';
+  const CLOUD={enabled:false,ready:false,client:null,user:null,company:null,companies:[],revision:0,hydrating:false,saveTimer:null,syncBusy:false,lastError:''};
+  window.GSTRecoCloud=CLOUD;
+  const legacyLogin=window.login, legacyLogout=window.logoutApp, legacyLock=window.lockApp;
+  const legacyOpenPassword=window.openPasswordDialog, legacyChangePassword=window.changeMyPassword;
+  const legacyCreateUser=window.createUserAccount, legacyRenderFileBanner=window.renderFileBanner;
+  const q=id=>document.getElementById(id);
+  const t=(id,v)=>{const e=q(id);if(e)e.textContent=v==null?'':String(v)};
+  const notify=m=>{try{toast(m)}catch(e){console.log(m)}};
+  const cloudOn=()=>!!(CLOUD.enabled&&CLOUD.ready&&CLOUD.client);
+  function cfgWindow(){const c=window.GST_RECOPRO_SUPABASE_CONFIG||{};return{url:String(c.url||''),key:String(c.publishableKey||c.anonKey||'')}}
+  async function getConfig(){const direct=cfgWindow();if(direct.url&&direct.key)return direct;try{const r=await fetch('/api/config',{cache:'no-store'});if(!r.ok)return direct;const x=await r.json();return{url:String(x.url||''),key:String(x.publishableKey||x.anonKey||'')}}catch(e){return direct}}
+  function status(msg,kind){['cloudSyncMeta','cloudSyncMetaApp'].forEach(id=>t(id,msg));const e=q('cloudSettingsStatus');if(e){t('cloudSettingsStatus',msg);e.className=kind==='ok'?'cloud-connected':kind==='err'?'cloud-danger':'cloud-offline'}}
+  function meta(){const role=CLOUD.company?(CLOUD.company.role||'user').toUpperCase():'—',email=CLOUD.user?.email||'—';['cloudRoleMeta','cloudRoleMetaApp','cloudRoleMetaIMS'].forEach(id=>t(id,role));['cloudEmailMeta','cloudEmailMetaApp','cloudEmailMetaIMS'].forEach(id=>t(id,email));t('cloudSettingsCompany',CLOUD.company?CLOUD.company.name:'No company selected');t('cloudSettingsRole',role)}
+  function renderBars(){const opts=CLOUD.companies.map(c=>'<option value="'+escapeHtml(c.id)+'">'+escapeHtml(c.name+(c.gstin?' · '+c.gstin:''))+' · '+String(c.role||'user').toUpperCase()+'</option>').join('');['cloudCompanySelect','cloudCompanySelectApp','cloudCompanySelectIMS'].forEach(id=>{const e=q(id);if(!e)return;e.innerHTML=opts||'<option value="">No company</option>';if(CLOUD.company)e.value=CLOUD.company.id});const admin=!!(CLOUD.company&&CLOUD.company.role==='admin');['cloudCreateCompanyBtn','cloudCreateCompanyBtnApp','cloudCreateCompanyBtnIMS'].forEach(id=>{const e=q(id);if(e)e.style.display=admin?'':'none'});meta()}
+  function showBars(){const gate=q('cloudGateBar'),app=q('cloudAppBar');if(gate)gate.style.display=CLOUD.enabled?'flex':'none';if(app)app.style.display=CLOUD.enabled&&CLOUD.user?'flex':'none';const lu=q('legacyLoginUserField')||q('loginUser')?.closest('.auth-field');const lf=q('cloudLoginFields');if(CLOUD.enabled){if(lu)lu.style.display='none';if(lf)lf.style.display='block';const lb=document.querySelector('#authGate .auth-login-btn');if(lb)lb.textContent='☁  Login to GST RecoPro Cloud';const foot=document.querySelector('#authGate .auth-foot');if(foot)foot.innerHTML='© 2026 GST RecoPro. All rights reserved. · Cloud Database';}else{if(lu)lu.style.display='';if(lf)lf.style.display='none';const lb=document.querySelector('#authGate .auth-login-btn');if(lb)lb.textContent='↪   Login';const foot=document.querySelector('#authGate .auth-foot');if(foot)foot.innerHTML='© 2026 GST RecoPro. All rights reserved.'}}
+  function cloudPayload(){return{app:'gst-recon',version:4,nextId,twoB:DB.twoB||[],books:DB.books||[],rcm:DB.rcm||[],manualInel:DB.manualInel||{},ims:{records:IMS_DB.records||[],books:IMS_DB.books||[]},notes:typeof NOTES_KEY!=='undefined'?readLocal(NOTES_KEY,{}):{}}}
+  async function fetchLocks(){if(!CLOUD.company)return{twoB:{},ims:{}};const {data,error}=await CLOUD.client.from('company_period_locks').select('module,period,meta').eq('company_id',CLOUD.company.id);if(error)throw error;const twoB={},ims={};(data||[]).forEach(r=>{(r.module==='2B'?twoB:ims)[r.period]=r.meta||{}});return{twoB,ims}}
+  const CLOUD_UNDO=new Map();
+  function cloudSnapshotForUndo(){if(!cloudOn()||!CLOUD.company)return;CLOUD_UNDO.set(CLOUD.company.id,JSON.parse(JSON.stringify({db:DB,ims:IMS_DB,notes:typeof NOTES_KEY!=='undefined'?readLocal(NOTES_KEY,{}):{}})))}
+  function cloudUndoLastChange(){if(!cloudOn()||!CLOUD.company){return}const snap=CLOUD_UNDO.get(CLOUD.company.id);if(!snap){notify('No cloud undo is available for this company.');return}DB=snap.db;IMS_DB=snap.ims;if(typeof NOTES_KEY!=='undefined')writeLocal(NOTES_KEY,snap.notes||{});recomputeAll(DB.twoB,DB.books);refreshAllViews();renderIMSWorkspace();CLOUD_UNDO.delete(CLOUD.company.id);window.saveDB();window.saveIMSDB();notify('Last change undone for the selected company.')}
+  window.snapshotForUndo=cloudSnapshotForUndo;
+  window.undoLastChange=cloudUndoLastChange;
+
+  function applyPayload(d,locks){CLOUD.hydrating=true;try{DB={twoB:Array.isArray(d?.twoB)?d.twoB:[],books:Array.isArray(d?.books)?d.books:[],rcm:Array.isArray(d?.rcm)?d.rcm:[],closed:locks?.twoB||{},manualInel:d?.manualInel||{}};IMS_DB={records:Array.isArray(d?.ims?.records)?d.ims.records:[],books:Array.isArray(d?.ims?.books)?d.ims.books:[],closed:locks?.ims||{}};nextId=Math.max(Number(d?.nextId)||1,1+Math.max(0,...DB.twoB.map(r=>Number(r.id)||0),...DB.books.map(r=>Number(r.id)||0),...DB.rcm.map(r=>Number(r.id)||0)));if(typeof NOTES_KEY!=='undefined')writeLocal(NOTES_KEY,d?.notes||{});recomputeAll(DB.twoB,DB.books);refreshAllViews();renderIMSWorkspace();updateStorageInfo()}finally{CLOUD.hydrating=false}}
+  async function loadCompany(id){if(!cloudOn()||!id)return;const c=CLOUD.companies.find(x=>String(x.id)===String(id));if(!c)return;status('Loading '+c.name+'…','');CLOUD.hydrating=true;try{const {data,error}=await CLOUD.client.from('company_snapshots').select('payload,revision').eq('company_id',id).maybeSingle();if(error)throw error;const locks=await fetchLocks();CLOUD.company=c;CLOUD.revision=Number(data?.revision||0);applyPayload(data?.payload||{},locks);renderBars();status('🟢 Cloud connected · revision '+CLOUD.revision,'ok')}catch(e){CLOUD.lastError=e.message||String(e);status('Cloud load failed: '+CLOUD.lastError,'err');notify('Cloud load failed: '+CLOUD.lastError)}finally{CLOUD.hydrating=false}}
+  async function loadCompanies(){if(!cloudOn())return[];const {data,error}=await CLOUD.client.from('company_members').select('company_id,role,company:companies(id,name,gstin)').eq('user_id',CLOUD.user.id).order('created_at',{ascending:true});if(error)throw error;CLOUD.companies=(data||[]).filter(x=>x.company).map(x=>({id:x.company.id,name:x.company.name,gstin:x.company.gstin||'',role:x.role}));if(CLOUD.company&&!CLOUD.companies.some(x=>x.id===CLOUD.company.id))CLOUD.company=null;renderBars();if(!CLOUD.company&&CLOUD.companies.length===1)await loadCompany(CLOUD.companies[0].id);else if(CLOUD.company)await loadCompany(CLOUD.company.id);else if(!CLOUD.companies.length){status('No company assigned — create your first company.','');await cloudCreateCompany()}else status(CLOUD.companies.length+' company(s) available — select one.','ok');return CLOUD.companies}
+  async function cloudSignIn(email,password){const {data,error}=await CLOUD.client.auth.signInWithPassword({email,password});if(error)throw error;CLOUD.user=data.user;currentUser=null;sessionStorage.removeItem(SESSION_KEY);await loadCompanies();q('authGate').style.display='none';q('moduleGate').style.display='flex';document.querySelector('header').style.display='none';q('tabs').style.display='none';q('fileBanner').style.display='none';document.querySelectorAll('.tab-panel').forEach(x=>x.style.display='none');if(CLOUD.company){currentUser=CLOUD.company.role==='admin'?'admin':'user';applyRoleUI()}renderBars();showBars()}
+  async function createFirstAdmin(){if(!CLOUD.client)return;q('loginError').textContent='';const email=prompt('Admin email address:');if(!email)return;const pw=prompt('Admin password (minimum 8 characters):');if(!pw)return;if(pw.length<8){alert('Password must be at least 8 characters.');return}const cf=prompt('Confirm Admin password:');if(pw!==cf){alert('Passwords do not match.');return}try{const {data,error}=await CLOUD.client.auth.signUp({email:email.trim(),password:pw});if(error)throw error;CLOUD.user=data.user;if(!data.session){notify('Admin account created. Check the Supabase confirmation email if enabled, then log in.');return}await cloudCreateCompany('First Company','');if(CLOUD.company){currentUser='admin';applyRoleUI();q('authGate').style.display='none';q('moduleGate').style.display='flex';document.querySelector('header').style.display='none';q('tabs').style.display='none';q('fileBanner').style.display='none';document.querySelectorAll('.tab-panel').forEach(x=>x.style.display='none');renderBars();showBars()}}catch(e){q('loginError').textContent=e.message||String(e)}}
+  async function cloudCreateCompany(defaultName='',defaultGstin=''){if(!cloudOn()||!CLOUD.user){notify('Login to Cloud first.');return}const name=prompt('Company legal/trade name:',defaultName||'');if(!name||!name.trim())return;const gstin=prompt('Company GSTIN (optional):',defaultGstin||'')||'';try{const {data,error}=await CLOUD.client.rpc('create_company',{p_name:name.trim(),p_gstin:gstin.trim().toUpperCase()});if(error)throw error;await loadCompanies();if(data)await loadCompany(data);notify('Company created: '+name.trim())}catch(e){notify('Could not create company: '+(e.message||e))}}
+  async function cloudSwitchCompany(id){if(!id||!cloudOn())return;if(CLOUD.company&&String(CLOUD.company.id)!==String(id)){clearTimeout(CLOUD.saveTimer);const ok=await cloudSyncNow(true);if(!ok)return}await loadCompany(id);currentUser=CLOUD.company?.role==='admin'?'admin':'user';applyRoleUI();q('moduleGate').style.display='flex';document.querySelectorAll('.tab-panel').forEach(x=>x.style.display='none');document.querySelector('header').style.display='none';q('tabs').style.display='none'}
+  async function cloudRefreshCompanies(){try{await loadCompanies()}catch(e){notify('Cloud refresh failed: '+(e.message||e))}}
+  async function cloudSyncNow(){if(!cloudOn()||!CLOUD.company||CLOUD.hydrating||CLOUD.syncBusy)return true;CLOUD.syncBusy=true;try{status('Saving…','');const {data,error}=await CLOUD.client.rpc('save_company_snapshot',{p_company_id:CLOUD.company.id,p_payload:cloudPayload(),p_expected_revision:CLOUD.revision||0});if(error)throw error;CLOUD.revision=Number(data||0);if(currentUser==='admin'){const {error:le}=await CLOUD.client.rpc('save_period_locks',{p_company_id:CLOUD.company.id,p_two_b:DB.closed||{},p_ims:IMS_DB.closed||{}});if(le)throw le}status('🟢 Saved · revision '+CLOUD.revision+' · '+new Date().toLocaleTimeString('en-IN'),'ok');return true}catch(e){const m=String(e.message||e);status(/CONFLICT/i.test(m)?'⚠ Cloud conflict — reload required':'Cloud save failed: '+m,'err');notify(/CONFLICT/i.test(m)?'Another user/device changed this company. Your current changes were NOT overwritten. Reload the company before continuing.':'Cloud save failed: '+m);return false}finally{CLOUD.syncBusy=false}}
+  function queueSync(){if(!cloudOn()||!CLOUD.company||CLOUD.hydrating)return;clearTimeout(CLOUD.saveTimer);CLOUD.saveTimer=setTimeout(()=>cloudSyncNow(),450)}
+  window.saveDB=function(){if(cloudOn()){updateStorageInfo();queueSync();return}saveLocal();scheduleFileWrite()};
+  window.saveIMSDB=function(){if(cloudOn()){updateStorageInfo();queueSync();return}saveIMSLocalOnly();scheduleFileWrite();updateStorageInfo()};
+  window.renderFileBanner=function(){if(cloudOn()){const e=q('fileBanner');if(e){e.className='ok';e.innerHTML='☁ <b>Cloud database active</b> — selected company data is stored in Supabase. GST_Recon_Data.json is not the primary database.'}return}legacyRenderFileBanner()};
+  window.login=async function(){if(!CLOUD.enabled)return legacyLogin();const email=(q('cloudLoginEmail')?.value||'').trim(),pw=(q('loginPassword')?.value||'');if(!email){q('loginError').textContent='Enter your Cloud email.';return}if(!pw){q('loginError').textContent='Enter your password.';return}try{await cloudSignIn(email,pw)}catch(e){q('loginError').textContent=e.message||'Cloud login failed.'}};
+  window.cloudCreateFirstAdmin=createFirstAdmin;window.cloudCreateCompany=cloudCreateCompany;window.cloudSwitchCompany=cloudSwitchCompany;window.cloudRefreshCompanies=cloudRefreshCompanies;window.cloudSyncNow=cloudSyncNow;
+  window.cloudLogout=async function(){return window.logoutApp()};
+
+  // Cloud mode: Supabase authentication is the source of truth for admin-sensitive
+  // actions. Do not ask for the legacy browser-only admin password after a cloud login.
+  // This prevents the old local password hash from blocking legitimate cloud admins.
+  const cloudClosePeriodGuarded = window.closePeriod;
+  const cloudReopenPeriodGuarded = window.reopenPeriod;
+  const cloudEraseDataGuarded = window.eraseData;
+  const cloudRestoreBackupGuarded = window.restoreBackup;
+  window.closePeriod = function(){
+    if(!isAdmin()){notify('Only Admin can close a period.');return}
+    if(typeof _closePeriod==='function') return _closePeriod();
+    return cloudClosePeriodGuarded?.();
+  };
+  window.reopenPeriod = function(){
+    if(!isAdmin()){notify('Only Admin can reopen a period.');return}
+    if(typeof _reopenPeriod==='function') return _reopenPeriod();
+    return cloudReopenPeriodGuarded?.();
+  };
+  window.eraseData = function(scope){
+    if(!isAdmin()){notify('Only Admin can erase data.');return}
+    if(typeof _eraseData==='function') return _eraseData(scope);
+    return cloudEraseDataGuarded?.(scope);
+  };
+  window.restoreBackup = function(evt){
+    if(!isAdmin()){notify('Only Admin can restore a backup.');if(evt)evt.target.value='';return}
+    if(typeof _restoreBackup==='function') return _restoreBackup(evt);
+    return cloudRestoreBackupGuarded?.(evt);
+  };
+
+  window.openPasswordDialog=function(){if(!cloudOn())return legacyOpenPassword();if(!CLOUD.user)return;q('passwordTarget').textContent='Change cloud password for '+(CLOUD.user.email||'this account')+'.';const lab=q('currentPassword')?.closest('.auth-field');if(lab)lab.style.display='none';q('newPassword').value='';q('confirmPassword').value='';q('passwordError').textContent='';q('passwordModal').style.display='flex'};
+  window.changeMyPassword=async function(){if(!cloudOn())return legacyChangePassword();const nw=q('newPassword').value,cf=q('confirmPassword').value;if(nw.length<8){q('passwordError').textContent='Password must be at least 8 characters.';return}if(nw!==cf){q('passwordError').textContent='Passwords do not match.';return}const {error}=await CLOUD.client.auth.updateUser({password:nw});if(error){q('passwordError').textContent=error.message;return}closePasswordDialog();notify('Cloud password updated.')};
+  window.logoutApp=async function(){if(cloudOn()){clearTimeout(CLOUD.saveTimer);if(CLOUD.company&&!CLOUD.syncBusy)await cloudSyncNow();try{await CLOUD.client.auth.signOut()}catch(e){}CLOUD.user=null;CLOUD.company=null;CLOUD.companies=[];CLOUD.revision=0;currentUser=null;DB={twoB:[],books:[],rcm:[],closed:{},manualInel:{}};IMS_DB={records:[],books:[],closed:{}};q('authGate').style.display='flex';q('moduleGate').style.display='none';document.querySelector('header').style.display='none';q('tabs').style.display='none';q('fileBanner').style.display='none';renderBars();showBars();q('loginPassword').value='';q('loginError').textContent='';return}return legacyLogout()};
+  window.lockApp=async function(){if(cloudOn())return window.logoutApp();return legacyLock()};
+  window.createUserAccount=async function(){if(!cloudOn())return legacyCreateUser();if(!isAdmin()||!CLOUD.company){notify('Only a Company Admin can create/reset users.');return}const email=prompt('User email address:');if(!email)return;const pw=prompt('Password (minimum 8 characters):');if(!pw)return;if(pw.length<8){alert('Password must be at least 8 characters.');return}const role=(prompt('Role: ADMIN or USER','USER')||'USER').trim().toLowerCase();if(!['admin','user'].includes(role)){alert('Role must be ADMIN or USER.');return}try{const s=await CLOUD.client.auth.getSession(),token=s.data.session?.access_token;if(!token)throw new Error('Cloud session expired. Please log in again.');const r=await fetch('/api/admin-user',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},body:JSON.stringify({email:email.trim(),password:pw,role,companyId:CLOUD.company.id})});const j=await r.json().catch(()=>({}));if(!r.ok)throw new Error(j.error||'User operation failed.');notify(j.action==='reset'?'User password reset and access updated.':'User created and added to this company.')}catch(e){notify('Create/Reset User failed: '+(e.message||e))}};
+  const legacyApply=window.applyRoleUI;window.applyRoleUI=function(){legacyApply();if(cloudOn())renderBars()};
+  async function bootstrap(){const cfg=await getConfig();if(!cfg.url||!cfg.key){CLOUD.enabled=false;showBars();return}if(!window.supabase?.createClient){CLOUD.enabled=false;status('Supabase library could not load.','err');showBars();return}try{CLOUD.client=window.supabase.createClient(cfg.url,cfg.key,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});CLOUD.enabled=true;CLOUD.ready=true;showBars();sessionStorage.removeItem(SESSION_KEY);const {data}=await CLOUD.client.auth.getSession();if(data?.session?.user){CLOUD.user=data.session.user;await loadCompanies();if(CLOUD.company){currentUser=CLOUD.company.role==='admin'?'admin':'user';applyRoleUI();q('authGate').style.display='none';q('moduleGate').style.display='flex';document.querySelector('header').style.display='none';q('tabs').style.display='none';q('fileBanner').style.display='none'}}else{q('authGate').style.display='flex';q('moduleGate').style.display='none';document.querySelector('header').style.display='none';q('tabs').style.display='none'}CLOUD.client.auth.onAuthStateChange((evt)=>{if(evt==='SIGNED_OUT'){CLOUD.user=null;CLOUD.company=null;CLOUD.companies=[];currentUser=null;renderBars();status('Signed out','')}})}catch(e){CLOUD.enabled=false;CLOUD.ready=false;status('Cloud init failed: '+(e.message||String(e)),'err');showBars()}}
+  setTimeout(bootstrap,0);
+})();
+</script>
+</body>
+</html>
+
