@@ -141,8 +141,11 @@
       <div class="auth-card">
         <div class="auth-welcome"><h2>Welcome to GST <span>RecoPro</span></h2><p>GST 2B ⇄ Books Reconciliation System</p></div>
         <div class="auth-field"><label>Username</label><select id="loginUser"><option value="admin">Admin</option><option value="user">User</option></select></div>
-        <div class="auth-field"><label>Password</label><input id="loginPassword" type="password" autocomplete="current-password" onkeydown="if(event.key==='Enter')login()"></div>
-        <button class="btn auth-login-btn" onclick="login()">↪ &nbsp; Login</button><div id="cloudLoginFields" style="display:none"><div class="auth-field"><label>Cloud Email</label><input id="cloudLoginEmail" type="email" autocomplete="username" placeholder="you@company.com" onkeydown="if(event.key==='Enter')login()"></div></div><button id="cloudFirstAdminBtn" class="btn secondary" style="display:none;width:100%;margin-top:8px" onclick="cloudCreateFirstAdmin()">Create First Admin Account</button>
+        <div id="cloudLoginFields" style="display:none">
+          <div class="auth-field"><label>User ID / Email</label><input id="cloudLoginEmail" type="email" autocomplete="username" placeholder="Enter your User ID / Email" onkeydown="if(event.key==='Enter')login()"></div>
+        </div>
+        <div class="auth-field"><label>Password</label><input id="loginPassword" type="password" autocomplete="current-password" placeholder="Enter your password" onkeydown="if(event.key==='Enter')login()"></div>
+        <button class="btn auth-login-btn" onclick="login()">↪ &nbsp; Login</button>
         <div id="loginError" class="auth-error"></div>
         <div class="auth-foot">© 2026 GST RecoPro. All rights reserved.</div>
       </div>
@@ -2064,8 +2067,27 @@ function renderIMSTable(){
   el.querySelectorAll('.ims-col-filter').forEach(inp=>inp.addEventListener('input',()=>renderIMSTable()));
 }
 function setIMSDecision(id,v){const p=document.getElementById('imsPeriod')?.value;if(isIMSClosed(p)){toast('IMS period is frozen. Admin must reopen it first.');renderIMSTable();return}const r=IMS_DB.records.find(x=>String(x.id)===String(id));if(!r)return;r.decision=v;r.decisionAt=new Date().toISOString();r.decisionBy=currentUser||'unknown';saveIMSDB();renderIMSWorkspace();toast('IMS decision saved: '+v)}
-function closeIMSPeriod(){if(!isAdmin()){toast('Only Admin can close an IMS period.');return}requestAdminVerification('Close IMS Period','Enter Admin password to close and freeze this IMS period.',async()=>{const p=document.getElementById('imsPeriod')?.value;if(!p)return toast('Select an IMS period first.');if(isIMSClosed(p))return toast('This IMS period is already frozen.');if(!confirm('Close and freeze '+imsPeriodLabel(p)+' IMS? After closing, imports and decisions for this period will be locked.'))return;computeIMSMatching();IMS_DB.closed[p]={closedAt:new Date().toISOString(),closedBy:currentUser,snapshot:imsCurrentRecords()};saveIMSDB();renderIMSWorkspace();toast('IMS '+imsPeriodLabel(p)+' is now frozen.')})}
-function reopenIMSPeriod(){if(!isAdmin()){toast('Only Admin can reopen an IMS period.');return}requestAdminVerification('Reopen IMS Period','Enter Admin password to reopen this IMS period.',async()=>{const p=document.getElementById('imsPeriod')?.value;if(!p)return toast('Select an IMS period first.');if(!isIMSClosed(p))return toast('This IMS period is already live.');if(!confirm('Reopen '+imsPeriodLabel(p)+' IMS?'))return;delete IMS_DB.closed[p];saveIMSDB();renderIMSWorkspace();toast('IMS '+imsPeriodLabel(p)+' reopened.')})}
+async function confirmIMSAdminPassword(actionLabel){
+  if(!isAdmin()){toast('Only Admin can '+actionLabel+' an IMS period.');return false}
+  if(cloudOn()){
+    const email=CLOUD.user?.email;
+    if(!email){toast('Cloud Admin session is not available. Please login again.');return false}
+    const pw=prompt('Enter Admin password to '+actionLabel+' IMS period:');
+    if(pw===null)return false;
+    if(!pw){toast('Password is required.');return false}
+    try{
+      const {error}=await CLOUD.client.auth.signInWithPassword({email,password:pw});
+      if(error)throw error;
+      return true;
+    }catch(e){toast('Admin password verification failed. '+(e.message||''));return false}
+  }
+  const pw=prompt('Enter Admin password to '+actionLabel+' IMS period:');
+  if(pw===null)return false;
+  if(typeof ADMIN_PASSWORD!=='undefined' && pw===ADMIN_PASSWORD)return true;
+  toast('Invalid Admin password.');return false;
+}
+async function closeIMSPeriod(){if(!isAdmin()){toast('Only Admin can close an IMS period.');return}const p=document.getElementById('imsPeriod')?.value;if(!p)return toast('Select an IMS period first.');if(isIMSClosed(p))return toast('This IMS period is already frozen.');if(!(await confirmIMSAdminPassword('close')))return;if(!confirm('Close and freeze '+imsPeriodLabel(p)+' IMS? After closing, imports and decisions for this period will be locked.'))return;computeIMSMatching();IMS_DB.closed[p]={closedAt:new Date().toISOString(),closedBy:currentUser,snapshot:imsCurrentRecords()};saveIMSDB();renderIMSWorkspace();toast('IMS '+imsPeriodLabel(p)+' is now frozen.')}
+async function reopenIMSPeriod(){if(!isAdmin()){toast('Only Admin can reopen an IMS period.');return}const p=document.getElementById('imsPeriod')?.value;if(!p)return toast('Select an IMS period first.');if(!isIMSClosed(p))return toast('This IMS period is already live.');if(!(await confirmIMSAdminPassword('reopen')))return;if(!confirm('Reopen '+imsPeriodLabel(p)+' IMS?'))return;delete IMS_DB.closed[p];saveIMSDB();renderIMSWorkspace();toast('IMS '+imsPeriodLabel(p)+' reopened.')}
 function importIMSBooksFile(input){
   const f=input.files?.[0];
   if(!f)return;
@@ -2319,7 +2341,7 @@ function exportIMSFullReport(){
   function status(msg,kind){['cloudSyncMeta','cloudSyncMetaApp'].forEach(id=>t(id,msg));const e=q('cloudSettingsStatus');if(e){t('cloudSettingsStatus',msg);e.className=kind==='ok'?'cloud-connected':kind==='err'?'cloud-danger':'cloud-offline'}}
   function meta(){const role=CLOUD.company?(CLOUD.company.role||'user').toUpperCase():'—',email=CLOUD.user?.email||'—';['cloudRoleMeta','cloudRoleMetaApp','cloudRoleMetaIMS'].forEach(id=>t(id,role));['cloudEmailMeta','cloudEmailMetaApp','cloudEmailMetaIMS'].forEach(id=>t(id,email));t('cloudSettingsCompany',CLOUD.company?CLOUD.company.name:'No company selected');t('cloudSettingsRole',role)}
   function renderBars(){const opts=CLOUD.companies.map(c=>'<option value="'+escapeHtml(c.id)+'">'+escapeHtml(c.name+(c.gstin?' · '+c.gstin:''))+' · '+String(c.role||'user').toUpperCase()+'</option>').join('');['cloudCompanySelect','cloudCompanySelectApp','cloudCompanySelectIMS'].forEach(id=>{const e=q(id);if(!e)return;e.innerHTML=opts||'<option value="">No company</option>';if(CLOUD.company)e.value=CLOUD.company.id});const admin=!!(CLOUD.company&&CLOUD.company.role==='admin');['cloudCreateCompanyBtn','cloudCreateCompanyBtnApp','cloudCreateCompanyBtnIMS'].forEach(id=>{const e=q(id);if(e)e.style.display=admin?'':'none'});meta()}
-  function showBars(){const gate=q('cloudGateBar'),app=q('cloudAppBar');if(gate)gate.style.display=CLOUD.enabled?'flex':'none';if(app)app.style.display=CLOUD.enabled&&CLOUD.user?'flex':'none';if(CLOUD.enabled){const lu=q('loginUser')?.closest('.auth-field');if(lu)lu.style.display='none';const lf=q('cloudLoginFields');if(lf)lf.style.display='block';const ca=q('cloudFirstAdminBtn');if(ca)ca.style.display='block';const lb=document.querySelector('#authGate .auth-login-btn');if(lb)lb.textContent='☁  Login to GST RecoPro Cloud';const foot=document.querySelector('#authGate .auth-foot');if(foot)foot.innerHTML='© 2026 GST RecoPro. All rights reserved. · Cloud Database';}else{const lu=q('loginUser')?.closest('.auth-field');if(lu)lu.style.display='';const lf=q('cloudLoginFields');if(lf)lf.style.display='none';const ca=q('cloudFirstAdminBtn');if(ca)ca.style.display='none';const lb=document.querySelector('#authGate .auth-login-btn');if(lb)lb.textContent='↪   Login';const foot=document.querySelector('#authGate .auth-foot');if(foot)foot.innerHTML='© 2026 GST RecoPro. All rights reserved.'}}
+  function showBars(){const gate=q('cloudGateBar'),app=q('cloudAppBar');if(gate)gate.style.display=CLOUD.enabled?'flex':'none';if(app)app.style.display=CLOUD.enabled&&CLOUD.user?'flex':'none';if(CLOUD.enabled){const lu=q('loginUser')?.closest('.auth-field');if(lu)lu.style.display='none';const lf=q('cloudLoginFields');if(lf)lf.style.display='block';const ca=q('cloudFirstAdminBtn');if(ca)ca.style.display='none';const lb=document.querySelector('#authGate .auth-login-btn');if(lb)lb.textContent='☁  Login to GST RecoPro Cloud';const foot=document.querySelector('#authGate .auth-foot');if(foot)foot.innerHTML='© 2026 GST RecoPro. All rights reserved.';}else{const lu=q('loginUser')?.closest('.auth-field');if(lu)lu.style.display='';const lf=q('cloudLoginFields');if(lf)lf.style.display='none';const ca=q('cloudFirstAdminBtn');if(ca)ca.style.display='none';const lb=document.querySelector('#authGate .auth-login-btn');if(lb)lb.textContent='↪   Login';const foot=document.querySelector('#authGate .auth-foot');if(foot)foot.innerHTML='© 2026 GST RecoPro. All rights reserved.'}}
   function cloudPayload(){return{app:'gst-recon',version:4,nextId,twoB:DB.twoB||[],books:DB.books||[],rcm:DB.rcm||[],manualInel:DB.manualInel||{},ims:{records:IMS_DB.records||[],books:IMS_DB.books||[]},notes:typeof NOTES_KEY!=='undefined'?readLocal(NOTES_KEY,{}):{}}}
   async function fetchLocks(){if(!CLOUD.company)return{twoB:{},ims:{}};const {data,error}=await CLOUD.client.from('company_period_locks').select('module,period,meta').eq('company_id',CLOUD.company.id);if(error)throw error;const twoB={},ims={};(data||[]).forEach(r=>{(r.module==='2B'?twoB:ims)[r.period]=r.meta||{}});return{twoB,ims}}
   const CLOUD_UNDO=new Map();
@@ -2340,7 +2362,7 @@ function exportIMSFullReport(){
   function queueSync(){if(!cloudOn()||!CLOUD.company||CLOUD.hydrating)return;clearTimeout(CLOUD.saveTimer);CLOUD.saveTimer=setTimeout(()=>cloudSyncNow(),450)}
   window.saveDB=function(){if(cloudOn()){updateStorageInfo();queueSync();return}saveLocal();scheduleFileWrite()};
   window.saveIMSDB=function(){if(cloudOn()){updateStorageInfo();queueSync();return}saveIMSLocalOnly();scheduleFileWrite();updateStorageInfo()};
-  window.renderFileBanner=function(){if(cloudOn()){const e=q('fileBanner');if(e){e.className='ok';e.innerHTML=''}return}legacyRenderFileBanner()};
+  window.renderFileBanner=function(){if(cloudOn()){const e=q('fileBanner');if(e){e.className='ok';e.innerHTML='☁ <b>'}return}legacyRenderFileBanner()};
   window.login=async function(){if(!CLOUD.enabled)return legacyLogin();const email=(q('cloudLoginEmail')?.value||'').trim(),pw=(q('loginPassword')?.value||'');if(!email){q('loginError').textContent='Enter your Cloud email.';return}if(!pw){q('loginError').textContent='Enter your password.';return}try{await cloudSignIn(email,pw)}catch(e){q('loginError').textContent=e.message||'Cloud login failed.'}};
   window.cloudCreateFirstAdmin=createFirstAdmin;window.cloudCreateCompany=cloudCreateCompany;window.cloudSwitchCompany=cloudSwitchCompany;window.cloudRefreshCompanies=cloudRefreshCompanies;window.cloudSyncNow=cloudSyncNow;
   window.cloudLogout=async function(){return window.logoutApp()};
