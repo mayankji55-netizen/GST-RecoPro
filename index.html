@@ -66,7 +66,7 @@
   .stat{flex:1;min-width:150px;background:#fff;border:1px solid var(--line);border-radius:8px;padding:12px 14px;}
   .stat .k{font-size:11.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.03em;}
   .stat .v{font-size:19px;font-weight:700;color:var(--navy);margin-top:3px;}
-  #fileBanner{padding:9px 22px;font-size:13px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;border-bottom:1px solid var(--line);}
+  #fileBanner{display:none !important;}
   #fileBanner.ok{background:#e3f6ea;color:#146c43;}
   #fileBanner.warn{background:#fff0c2;color:#7a5b00;}
   #fileBanner.err{background:#fde2e2;color:#b42318;}
@@ -1563,32 +1563,9 @@ async function initFileStorage(){
   renderFileBanner();
 }
 function renderFileBanner(){
-  updateIMSDataFileStatus();
-  const el = document.getElementById("fileBanner");
-  if(!el) return;
-  const name = fileHandle ? fileHandle.name : "";
-  let cls="warn", html="";
-  if(fileState.status==="unsupported"){
-    html = "⚠ This browser can't save to a data file (needs Chrome or Edge). Data is kept only in this browser — use <b>Data / Settings → Download backup</b> regularly.";
-  } else if(fileState.status==="ok"){
-    cls="ok";
-    html = "💾 Auto-saving to <b>"+name+"</b>" + (fileState.at ? " · last saved "+fileState.at.toLocaleTimeString("en-IN") : "") +
-      " <button class='btn secondary' onclick='disconnectFile()'>Disconnect</button>";
-  } else if(fileState.status==="needs-permission"){
-    html = "🔒 Data file <b>"+name+"</b> found — click once to reconnect and load your data. " +
-      "<button class='btn' onclick='reconnectFile()'>Reconnect &amp; load data</button> " +
-      "<button class='btn secondary' onclick='openDataFile()'>Choose a different file</button>";
-  } else if(fileState.status==="error"){
-    cls="err";
-    html = "❌ Could not save to the data file ("+fileState.msg+"). " +
-      "<button class='btn' onclick='reconnectFile()'>Reconnect</button>";
-  } else {
-    html = "⚠ Not connected to a data file — data is only in this browser and can be lost when you replace/move this app file. " +
-      "<button class='btn' onclick='createDataFile()'>Create new data file</button> " +
-      "<button class='btn secondary' onclick='openDataFile()'>Open existing data file</button>";
-  }
-  el.className = cls;
-  el.innerHTML = html;
+  // Cloud/Supabase is the active database. The legacy local data-file banner is intentionally disabled.
+  const el=document.getElementById("fileBanner");
+  if(el) el.style.display="none";
 }
 
 
@@ -2362,7 +2339,7 @@ function exportIMSFullReport(){
   function queueSync(){if(!cloudOn()||!CLOUD.company||CLOUD.hydrating)return;clearTimeout(CLOUD.saveTimer);CLOUD.saveTimer=setTimeout(()=>cloudSyncNow(),450)}
   window.saveDB=function(){if(cloudOn()){updateStorageInfo();queueSync();return}saveLocal();scheduleFileWrite()};
   window.saveIMSDB=function(){if(cloudOn()){updateStorageInfo();queueSync();return}saveIMSLocalOnly();scheduleFileWrite();updateStorageInfo()};
-  window.renderFileBanner=function(){if(cloudOn()){const e=q('fileBanner');if(e){e.className='ok';e.innerHTML='☁ <b>'}return}legacyRenderFileBanner()};
+  window.renderFileBanner=function(){const e=q('fileBanner');if(e)e.style.display='none';};
   window.login=async function(){if(!CLOUD.enabled)return legacyLogin();const email=(q('cloudLoginEmail')?.value||'').trim(),pw=(q('loginPassword')?.value||'');if(!email){q('loginError').textContent='Enter your Cloud email.';return}if(!pw){q('loginError').textContent='Enter your password.';return}try{await cloudSignIn(email,pw)}catch(e){q('loginError').textContent=e.message||'Cloud login failed.'}};
   window.cloudCreateFirstAdmin=createFirstAdmin;window.cloudCreateCompany=cloudCreateCompany;window.cloudSwitchCompany=cloudSwitchCompany;window.cloudRefreshCompanies=cloudRefreshCompanies;window.cloudSyncNow=cloudSyncNow;
   window.cloudLogout=async function(){return window.logoutApp()};
