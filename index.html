@@ -1393,12 +1393,45 @@ function refreshAllViews(){
 /* =====================================================================
    BACKUP / RESTORE / RESET
    ===================================================================== */
+function currentCloudCompanyIdentity(){
+  const c=window.GSTRecoCloud?.company||null;
+  return c?{id:String(c.id||''),name:String(c.name||''),gstin:String(c.gstin||'').trim().toUpperCase()}:null;
+}
+function backupCompanyIdentity(){
+  const c=currentCloudCompanyIdentity();
+  return {
+    schemaVersion:2,
+    companyId:c?.id||'',
+    companyName:c?.name||'',
+    companyGstin:c?.gstin||'',
+    createdAt:new Date().toISOString()
+  };
+}
+function validateBackupCompany(data){
+  const current=currentCloudCompanyIdentity();
+  if(!current) return {ok:true};
+  const meta=data?.backupMeta;
+  if(!meta || (!meta.companyId && !meta.companyGstin)){
+    return {ok:false,message:'This backup does not contain company identity information. For Cloud companies, old/unidentified backups cannot be restored because they may belong to another GSTIN. Download a fresh backup from the correct company and try again.'};
+  }
+  const backupId=String(meta.companyId||'');
+  const backupGstin=String(meta.companyGstin||'').trim().toUpperCase();
+  if(backupId && current.id && backupId!==current.id){
+    return {ok:false,message:'Backup belongs to another company. Restore blocked to protect company data. Current company: '+(current.name||'')+(current.gstin?' ('+current.gstin+')':'')+'. Backup company: '+(meta.companyName||'')+(backupGstin?' ('+backupGstin+')':'')+'.'};
+  }
+  if(backupGstin && current.gstin && backupGstin!==current.gstin){
+    return {ok:false,message:'GSTIN mismatch. This backup belongs to GSTIN '+backupGstin+', but the selected company is '+current.gstin+'. Restore blocked.'};
+  }
+  return {ok:true};
+}
 function exportBackup(){
-  const backupPayload={...DB, ims:{records:IMS_DB.records||[],books:IMS_DB.books||[],closed:IMS_DB.closed||{}}, notes:readLocal(NOTES_KEY,{})};
+  const backupPayload={...DB, backupMeta:backupCompanyIdentity(), ims:{records:IMS_DB.records||[],books:IMS_DB.books||[],closed:IMS_DB.closed||{}}, notes:readLocal(NOTES_KEY,{})};
+  const c=currentCloudCompanyIdentity();
+  const suffix=c?.gstin?'-'+c.gstin:'';
   const blob = new Blob([JSON.stringify(backupPayload,null,2)], {type:"application/json"});
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
-  a.href = url; a.download = "gst-reco-backup-"+new Date().toISOString().slice(0,10)+".json";
+  a.href = url; a.download = "gst-reco-backup-"+(c?.gstin||'company')+"-"+new Date().toISOString().slice(0,10)+".json";
   a.click();
   URL.revokeObjectURL(url);
 }
@@ -1410,15 +1443,18 @@ function restoreBackup(evt){
     try{
       const data = JSON.parse(reader.result);
       if(!data.twoB || !data.books) throw new Error("Invalid backup file");
+      const check=validateBackupCompany(data);
+      if(!check.ok) throw new Error(check.message);
       DB = { twoB:data.twoB||[], books:data.books||[], rcm:data.rcm||[], closed:data.closed||{}, manualInel:data.manualInel||{} };
-      if(data.ims && Array.isArray(data.ims.records)){ IMS_DB={records:data.ims.records||[],books:data.ims.books||[],closed:data.ims.closed||{}}; saveIMSDB(); } else { loadIMSDB(); }
+      if(data.ims && Array.isArray(data.ims.records)){ IMS_DB={records:data.ims.records||[],books:data.ims.books||[],closed:data.ims.closed||{}}; } else { loadIMSDB(); }
       writeLocal(NOTES_KEY,data.notes||{});
-      nextId = 1 + Math.max(0, ...DB.twoB.map(r=>r.id), ...DB.books.map(r=>r.id), ...DB.rcm.map(r=>r.id));
+      nextId = 1 + Math.max(0, ...DB.twoB.map(r=>Number(r.id)||0), ...DB.books.map(r=>Number(r.id)||0), ...DB.rcm.map(r=>Number(r.id)||0));
       recomputeAll(DB.twoB, DB.books);
       saveDB();
+      if(window.GSTRecoCloud?.enabled) window.GSTRecoCloud.restoreLastValidatedBackupIdentity=data.backupMeta||null;
       refreshAllViews();
-      toast("Backup restored.");
-    }catch(e){ alert("Could not read this backup file: "+e.message); }
+      toast("Backup restored for the selected company.");
+    }catch(e){ alert("Backup restore blocked: "+e.message); }
   };
   reader.readAsText(file);
   evt.target.value = "";
