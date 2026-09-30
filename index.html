@@ -140,10 +140,9 @@
     <div class="login-right">
       <div class="auth-card">
         <div class="auth-welcome"><h2>Welcome to GST <span>RecoPro</span></h2><p>GST 2B ⇄ Books Reconciliation System</p></div>
-        <div id="cloudLoginFields" style="display:none"><div class="auth-field"><label>Cloud Email</label><input id="cloudLoginEmail" type="email" autocomplete="username" placeholder="you@company.com" onkeydown="if(event.key==='Enter')login()"></div></div>
-        <div class="auth-field" id="legacyLoginUserField"><label>Username</label><select id="loginUser"><option value="admin">Admin</option><option value="user">User</option></select></div>
+        <div class="auth-field"><label>Username</label><select id="loginUser"><option value="admin">Admin</option><option value="user">User</option></select></div>
         <div class="auth-field"><label>Password</label><input id="loginPassword" type="password" autocomplete="current-password" onkeydown="if(event.key==='Enter')login()"></div>
-        <button class="btn auth-login-btn" onclick="login()">↪ &nbsp; Login</button>
+        <button class="btn auth-login-btn" onclick="login()">↪ &nbsp; Login</button><div id="cloudLoginFields" style="display:none"><div class="auth-field"><label>Cloud Email</label><input id="cloudLoginEmail" type="email" autocomplete="username" placeholder="you@company.com" onkeydown="if(event.key==='Enter')login()"></div></div><button id="cloudFirstAdminBtn" class="btn secondary" style="display:none;width:100%;margin-top:8px" onclick="cloudCreateFirstAdmin()">Create First Admin Account</button>
         <div id="loginError" class="auth-error"></div>
         <div class="auth-foot">© 2026 GST RecoPro. All rights reserved.</div>
       </div>
@@ -173,7 +172,7 @@
 
 <div id="moduleGate">
   <div class="module-shell">
-    <div id="cloudGateBar" class="cloud-bar"><span class="cloud-title">☁ CLOUD COMPANY</span><select id="cloudCompanySelect" onchange="cloudSwitchCompany(this.value)"></select><button class="btn secondary" id="cloudCreateCompanyBtn" onclick="cloudCreateCompany()">+ Company</button><span class="cloud-meta"><span id="cloudRoleMeta">—</span> · <span id="cloudEmailMeta">—</span></span><span class="cloud-sync" id="cloudSyncMeta">Cloud not connected</span><button class="btn secondary" onclick="cloudRefreshCompanies()">↻</button><button class="btn secondary" onclick="cloudLogout()">Logout</button></div><div class="module-brand">
+    <div id="cloudGateBar" class="cloud-bar"><span class="cloud-title">GST RecoPro</span><select id="cloudCompanySelect" onchange="cloudSwitchCompany(this.value)"></select><button class="btn secondary" id="cloudCreateCompanyBtn" onclick="cloudCreateCompany()">+ Company</button><span class="cloud-meta"><span id="cloudRoleMeta">—</span> · <span id="cloudEmailMeta">—</span></span><span class="cloud-sync" id="cloudSyncMeta">Cloud not connected</span><button class="btn secondary" onclick="cloudRefreshCompanies()">↻</button><button class="btn secondary" onclick="cloudLogout()">Logout</button></div><div class="module-brand">
       <div class="eyebrow">GST RECONCILIATION WORKSPACE</div>
       <h2>Choose your workspace</h2>
       <p>Select the GST workflow you want to work on.</p>
@@ -391,7 +390,7 @@
 <!-- ===================== SETTINGS ===================== -->
 <div class="card security-card" data-admin-only>
   <h3>Security & Users</h3>
-  <div class="hint">Manage application passwords and User account access from this section.</div>
+  <div class="hint"></div>
   <button class="btn" onclick="openPasswordDialog()">Change Admin Password</button>
   <button class="btn secondary" onclick="createUserAccount()">Create / Reset User</button>
 </div>
@@ -433,18 +432,18 @@
 
 <!-- ===================== IMS WORKSPACE ===================== -->
 <section id="tab-ims" class="tab-panel ims-page" style="display:none">
-  <div id="cloudIMSBar" class="cloud-bar" style="margin:0 0 12px 0"><span class="cloud-title">☁ CLOUD COMPANY</span><select id="cloudCompanySelectIMS" onchange="cloudSwitchCompany(this.value)"></select><button class="btn secondary" id="cloudCreateCompanyBtnIMS" onclick="cloudCreateCompany()">+ Company</button><span class="cloud-meta"><span id="cloudRoleMetaIMS">—</span> · <span id="cloudEmailMetaIMS">—</span></span><span class="cloud-sync" id="cloudSyncMetaIMS">Cloud not connected</span><button class="btn secondary" onclick="cloudRefreshCompanies()">↻</button></div>
+  <div id="cloudIMSBar" class="cloud-bar" style="margin:0 0 12px 0"><span class="cloud-title">GST RecoPro</span><select id="cloudCompanySelectIMS" onchange="cloudSwitchCompany(this.value)"></select><button class="btn secondary" id="cloudCreateCompanyBtnIMS" onclick="cloudCreateCompany()">+ Company</button><span class="cloud-meta"><span id="cloudRoleMetaIMS">—</span> · <span id="cloudEmailMetaIMS">—</span></span><span class="cloud-sync" id="cloudSyncMetaIMS">Cloud not connected</span><button class="btn secondary" onclick="cloudRefreshCompanies()">↻</button></div>
   <div class="module-topbar"><div class="module-name">GST RecoPro · IMS Matching</div><div class="module-actions"><button class="btn secondary" onclick="backToModules()">← Workspaces</button><button class="btn secondary" onclick="logoutApp()">Logout</button></div></div>
   <div class="ims-head">
-    <div><div style="font-size:11px;font-weight:800;letter-spacing:.12em;color:#4d7d69;text-transform:uppercase">INVOICE MANAGEMENT SYSTEM</div><h2>IMS Matching & Decision Workspace</h2><p>IMS remains separate from 2B Reco. Your manual Accept / Reject / Pending decision is the final software decision.</p></div>
+    <div><div style="font-size:11px;font-weight:800;letter-spacing:.12em;color:#4d7d69;text-transform:uppercase">INVOICE MANAGEMENT SYSTEM</div><h2>IMS Matching & Decision Workspace</h2><p></p></div>
     <div class="ims-actions"><button class="btn" onclick="document.getElementById('imsFile').click()">📥 Import IMS Excel</button><input id="imsFile" type="file" accept=".xlsx,.xls,.csv" style="display:none" onchange="importIMSFile(this)"><button class="btn secondary" onclick="document.getElementById('imsBooksFile').click()">📚 Import Books Excel</button><input id="imsBooksFile" type="file" accept=".xlsx,.xls,.csv" style="display:none" onchange="importIMSBooksFile(this)"><button class="btn secondary" onclick="renderIMSWorkspace()">Refresh</button></div>
   </div>
   <div class="card" style="margin-top:16px">
-    <div class="row" style="justify-content:space-between"><div class="ims-filter"><label style="font-weight:700;color:#345">IMS Period</label><input id="imsPeriod" type="month" aria-label="IMS Period" onchange="renderIMSWorkspace()"><span class="ims-note">Normal records are filtered by document date. Previous 2B “Not in 2B” records are checked separately and are not blocked by the month filter.</span></div></div>
+    <div class="row" style="justify-content:space-between"><div class="ims-filter"><label style="font-weight:700;color:#345">IMS Period</label><input id="imsPeriod" type="month" aria-label="IMS Period" onchange="renderIMSWorkspace()"><span class="ims-note"></span></div></div>
   </div>
   <div class="ims-cards"><div class="ims-stat"><small>IMS RECORDS</small><strong id="imsTotal">0</strong></div><div class="ims-stat"><small>MATCHED</small><strong id="imsMatched">0</strong></div><div class="ims-stat"><small>NOT IN BOOKS</small><strong id="imsNotBooks">0</strong></div><div class="ims-stat"><small>NO. / AMOUNT ISSUE</small><strong id="imsIssues">0</strong></div><div class="ims-stat"><small>DECISION PENDING</small><strong id="imsPending">0</strong></div><div class="ims-stat"><small>NOT IN IMS</small><strong id="imsNotIMS">0</strong></div></div>
   <div class="ims-workgrid">
-    <div class="card"><h3>IMS Period Control</h3><div id="imsLockBox" class="ims-lock"><strong id="imsLockTitle">No period selected</strong><div id="imsLockState" class="lock-state">Select an IMS period to begin.</div><div class="row"><button class="btn" data-ims-admin onclick="closeIMSPeriod()">Close & Freeze IMS Period</button><button class="btn secondary" data-ims-admin onclick="reopenIMSPeriod()">Reopen IMS Period</button></div></div><p class="ims-note" style="margin-top:12px">When an IMS period is closed, its imported data and manual decisions are treated as a frozen snapshot. New changes require Admin to reopen the period first.</p></div>
+    <div class="card"><h3>IMS Period Control</h3><div id="imsLockBox" class="ims-lock"><strong id="imsLockTitle">No period selected</strong><div id="imsLockState" class="lock-state">Select an IMS period to begin.</div><div class="row"><button class="btn" data-ims-admin onclick="closeIMSPeriod()">Close & Freeze IMS Period</button><button class="btn secondary" data-ims-admin onclick="reopenIMSPeriod()">Reopen IMS Period</button></div></div><p class="ims-note" style="margin-top:12px"></p></div>
     <div class="card"><h3>Matching Status</h3><div class="ims-status-list"><div class="ims-status"><b>Matched</b><span>GSTIN + document + amount</span></div><div class="ims-status"><b>Invoice No. Not Match</b><span>GSTIN + amount match, number differs</span></div><div class="ims-status"><b>Invoice Amount Not Matched</b><span>GSTIN + document match, amount differs</span></div><div class="ims-status"><b>Not in Books</b><span>IMS record has no Books counterpart</span></div></div></div>
   </div>
   <div class="card" style="margin-top:16px"><h3>IMS Records</h3><div class="ims-filter"><select id="imsDocFilter" onchange="renderIMSTable()"><option value="ALL">All documents</option><option value="B2B">B2B</option><option value="B2BA">B2BA</option><option value="B2B-DN">Debit Note</option><option value="B2B-DNA">Debit Note Amendment</option><option value="B2B-CN">Credit Note</option><option value="B2B-CNA">Credit Note Amendment</option></select><select id="imsDecisionFilter" onchange="renderIMSTable()"><option value="ALL">All decisions</option><option value="MATCHED">Matched</option><option value="INVOICE NO. NOT MATCH">Invoice No. Not Match</option><option value="INVOICE AMOUNT NOT MATCHED">Invoice Amount Not Matched</option><option value="NOT IN BOOKS">Not in Books</option><option value="NOT IN IMS">Not in IMS</option><option value="ACCEPTED">Accepted</option><option value="REJECTED">Rejected</option><option value="PENDING">Pending</option></select><input id="imsSearch" placeholder="Search GSTIN / invoice / party" oninput="renderIMSTable()"></div><div id="imsTable" style="margin-top:12px"></div></div>
@@ -546,7 +545,7 @@
   </div>
 </section>
 
-<footer>GST 2B ⇄ Books Reconciliation — local prototype. Not affiliated with GSTN. Verify figures before filing.</footer>
+<footer>GST RecoPro is an independent software tool and is not affiliated with or endorsed by GSTN. Please verify all data before filing.</footer>
 <div id="toast" class="toast"></div>
 
 <script>
@@ -2065,8 +2064,8 @@ function renderIMSTable(){
   el.querySelectorAll('.ims-col-filter').forEach(inp=>inp.addEventListener('input',()=>renderIMSTable()));
 }
 function setIMSDecision(id,v){const p=document.getElementById('imsPeriod')?.value;if(isIMSClosed(p)){toast('IMS period is frozen. Admin must reopen it first.');renderIMSTable();return}const r=IMS_DB.records.find(x=>String(x.id)===String(id));if(!r)return;r.decision=v;r.decisionAt=new Date().toISOString();r.decisionBy=currentUser||'unknown';saveIMSDB();renderIMSWorkspace();toast('IMS decision saved: '+v)}
-function closeIMSPeriod(){if(!isAdmin()){toast('Only Admin can close an IMS period.');return}const p=document.getElementById('imsPeriod')?.value;if(!p)return toast('Select an IMS period first.');if(isIMSClosed(p))return toast('This IMS period is already frozen.');if(!confirm('Close and freeze '+imsPeriodLabel(p)+' IMS? After closing, imports and decisions for this period will be locked.'))return;computeIMSMatching();IMS_DB.closed[p]={closedAt:new Date().toISOString(),closedBy:currentUser,snapshot:imsCurrentRecords()};saveIMSDB();renderIMSWorkspace();toast('IMS '+imsPeriodLabel(p)+' is now frozen.')}
-function reopenIMSPeriod(){if(!isAdmin()){toast('Only Admin can reopen an IMS period.');return}const p=document.getElementById('imsPeriod')?.value;if(!p)return toast('Select an IMS period first.');if(!isIMSClosed(p))return toast('This IMS period is already live.');if(!confirm('Reopen '+imsPeriodLabel(p)+' IMS?'))return;delete IMS_DB.closed[p];saveIMSDB();renderIMSWorkspace();toast('IMS '+imsPeriodLabel(p)+' reopened.')}
+function closeIMSPeriod(){if(!isAdmin()){toast('Only Admin can close an IMS period.');return}requestAdminVerification('Close IMS Period','Enter Admin password to close and freeze this IMS period.',async()=>{const p=document.getElementById('imsPeriod')?.value;if(!p)return toast('Select an IMS period first.');if(isIMSClosed(p))return toast('This IMS period is already frozen.');if(!confirm('Close and freeze '+imsPeriodLabel(p)+' IMS? After closing, imports and decisions for this period will be locked.'))return;computeIMSMatching();IMS_DB.closed[p]={closedAt:new Date().toISOString(),closedBy:currentUser,snapshot:imsCurrentRecords()};saveIMSDB();renderIMSWorkspace();toast('IMS '+imsPeriodLabel(p)+' is now frozen.')})}
+function reopenIMSPeriod(){if(!isAdmin()){toast('Only Admin can reopen an IMS period.');return}requestAdminVerification('Reopen IMS Period','Enter Admin password to reopen this IMS period.',async()=>{const p=document.getElementById('imsPeriod')?.value;if(!p)return toast('Select an IMS period first.');if(!isIMSClosed(p))return toast('This IMS period is already live.');if(!confirm('Reopen '+imsPeriodLabel(p)+' IMS?'))return;delete IMS_DB.closed[p];saveIMSDB();renderIMSWorkspace();toast('IMS '+imsPeriodLabel(p)+' reopened.')})}
 function importIMSBooksFile(input){
   const f=input.files?.[0];
   if(!f)return;
@@ -2301,13 +2300,6 @@ function exportIMSFullReport(){
 </script>
 
 <script>
-/* GST RecoPro Supabase client configuration.
-   Production values are supplied by the Netlify /api/config function.
-   No Supabase URL or key is embedded in the static HTML. */
-window.GST_RECOPRO_SUPABASE_CONFIG = { url: "", publishableKey: "" };
-</script>
-
-<script>
 /* =====================================================================
    GST RECOPRO CLOUD / MULTI-COMPANY LAYER
    ===================================================================== */
@@ -2327,7 +2319,7 @@ window.GST_RECOPRO_SUPABASE_CONFIG = { url: "", publishableKey: "" };
   function status(msg,kind){['cloudSyncMeta','cloudSyncMetaApp'].forEach(id=>t(id,msg));const e=q('cloudSettingsStatus');if(e){t('cloudSettingsStatus',msg);e.className=kind==='ok'?'cloud-connected':kind==='err'?'cloud-danger':'cloud-offline'}}
   function meta(){const role=CLOUD.company?(CLOUD.company.role||'user').toUpperCase():'—',email=CLOUD.user?.email||'—';['cloudRoleMeta','cloudRoleMetaApp','cloudRoleMetaIMS'].forEach(id=>t(id,role));['cloudEmailMeta','cloudEmailMetaApp','cloudEmailMetaIMS'].forEach(id=>t(id,email));t('cloudSettingsCompany',CLOUD.company?CLOUD.company.name:'No company selected');t('cloudSettingsRole',role)}
   function renderBars(){const opts=CLOUD.companies.map(c=>'<option value="'+escapeHtml(c.id)+'">'+escapeHtml(c.name+(c.gstin?' · '+c.gstin:''))+' · '+String(c.role||'user').toUpperCase()+'</option>').join('');['cloudCompanySelect','cloudCompanySelectApp','cloudCompanySelectIMS'].forEach(id=>{const e=q(id);if(!e)return;e.innerHTML=opts||'<option value="">No company</option>';if(CLOUD.company)e.value=CLOUD.company.id});const admin=!!(CLOUD.company&&CLOUD.company.role==='admin');['cloudCreateCompanyBtn','cloudCreateCompanyBtnApp','cloudCreateCompanyBtnIMS'].forEach(id=>{const e=q(id);if(e)e.style.display=admin?'':'none'});meta()}
-  function showBars(){const gate=q('cloudGateBar'),app=q('cloudAppBar');if(gate)gate.style.display=CLOUD.enabled?'flex':'none';if(app)app.style.display=CLOUD.enabled&&CLOUD.user?'flex':'none';const lu=q('legacyLoginUserField')||q('loginUser')?.closest('.auth-field');const lf=q('cloudLoginFields');if(CLOUD.enabled){if(lu)lu.style.display='none';if(lf)lf.style.display='block';const lb=document.querySelector('#authGate .auth-login-btn');if(lb)lb.textContent='☁  Login to GST RecoPro Cloud';const foot=document.querySelector('#authGate .auth-foot');if(foot)foot.innerHTML='© 2026 GST RecoPro. All rights reserved. · Cloud Database';}else{if(lu)lu.style.display='';if(lf)lf.style.display='none';const lb=document.querySelector('#authGate .auth-login-btn');if(lb)lb.textContent='↪   Login';const foot=document.querySelector('#authGate .auth-foot');if(foot)foot.innerHTML='© 2026 GST RecoPro. All rights reserved.'}}
+  function showBars(){const gate=q('cloudGateBar'),app=q('cloudAppBar');if(gate)gate.style.display=CLOUD.enabled?'flex':'none';if(app)app.style.display=CLOUD.enabled&&CLOUD.user?'flex':'none';if(CLOUD.enabled){const lu=q('loginUser')?.closest('.auth-field');if(lu)lu.style.display='none';const lf=q('cloudLoginFields');if(lf)lf.style.display='block';const ca=q('cloudFirstAdminBtn');if(ca)ca.style.display='block';const lb=document.querySelector('#authGate .auth-login-btn');if(lb)lb.textContent='☁  Login to GST RecoPro Cloud';const foot=document.querySelector('#authGate .auth-foot');if(foot)foot.innerHTML='© 2026 GST RecoPro. All rights reserved. · Cloud Database';}else{const lu=q('loginUser')?.closest('.auth-field');if(lu)lu.style.display='';const lf=q('cloudLoginFields');if(lf)lf.style.display='none';const ca=q('cloudFirstAdminBtn');if(ca)ca.style.display='none';const lb=document.querySelector('#authGate .auth-login-btn');if(lb)lb.textContent='↪   Login';const foot=document.querySelector('#authGate .auth-foot');if(foot)foot.innerHTML='© 2026 GST RecoPro. All rights reserved.'}}
   function cloudPayload(){return{app:'gst-recon',version:4,nextId,twoB:DB.twoB||[],books:DB.books||[],rcm:DB.rcm||[],manualInel:DB.manualInel||{},ims:{records:IMS_DB.records||[],books:IMS_DB.books||[]},notes:typeof NOTES_KEY!=='undefined'?readLocal(NOTES_KEY,{}):{}}}
   async function fetchLocks(){if(!CLOUD.company)return{twoB:{},ims:{}};const {data,error}=await CLOUD.client.from('company_period_locks').select('module,period,meta').eq('company_id',CLOUD.company.id);if(error)throw error;const twoB={},ims={};(data||[]).forEach(r=>{(r.module==='2B'?twoB:ims)[r.period]=r.meta||{}});return{twoB,ims}}
   const CLOUD_UNDO=new Map();
@@ -2337,7 +2329,7 @@ window.GST_RECOPRO_SUPABASE_CONFIG = { url: "", publishableKey: "" };
   window.undoLastChange=cloudUndoLastChange;
 
   function applyPayload(d,locks){CLOUD.hydrating=true;try{DB={twoB:Array.isArray(d?.twoB)?d.twoB:[],books:Array.isArray(d?.books)?d.books:[],rcm:Array.isArray(d?.rcm)?d.rcm:[],closed:locks?.twoB||{},manualInel:d?.manualInel||{}};IMS_DB={records:Array.isArray(d?.ims?.records)?d.ims.records:[],books:Array.isArray(d?.ims?.books)?d.ims.books:[],closed:locks?.ims||{}};nextId=Math.max(Number(d?.nextId)||1,1+Math.max(0,...DB.twoB.map(r=>Number(r.id)||0),...DB.books.map(r=>Number(r.id)||0),...DB.rcm.map(r=>Number(r.id)||0)));if(typeof NOTES_KEY!=='undefined')writeLocal(NOTES_KEY,d?.notes||{});recomputeAll(DB.twoB,DB.books);refreshAllViews();renderIMSWorkspace();updateStorageInfo()}finally{CLOUD.hydrating=false}}
-  async function loadCompany(id){if(!cloudOn()||!id)return;const c=CLOUD.companies.find(x=>String(x.id)===String(id));if(!c)return;status('Loading '+c.name+'…','');CLOUD.hydrating=true;try{const {data,error}=await CLOUD.client.from('company_snapshots').select('payload,revision').eq('company_id',id).maybeSingle();if(error)throw error;const locks=await fetchLocks();CLOUD.company=c;CLOUD.revision=Number(data?.revision||0);applyPayload(data?.payload||{},locks);renderBars();status('🟢 Cloud connected · revision '+CLOUD.revision,'ok')}catch(e){CLOUD.lastError=e.message||String(e);status('Cloud load failed: '+CLOUD.lastError,'err');notify('Cloud load failed: '+CLOUD.lastError)}finally{CLOUD.hydrating=false}}
+  async function loadCompany(id){if(!cloudOn()||!id)return;const c=CLOUD.companies.find(x=>String(x.id)===String(id));if(!c)return;status('Loading '+c.name+'…','');CLOUD.hydrating=true;try{const {data,error}=await CLOUD.client.from('company_snapshots').select('payload,revision').eq('company_id',id).maybeSingle();if(error)throw error;const locks=await fetchLocks();CLOUD.company=c;CLOUD.revision=Number(data?.revision||0);applyPayload(data?.payload||{},locks);renderBars();status('🟢 Cloud sync active','ok')}catch(e){CLOUD.lastError=e.message||String(e);status('Cloud load failed: '+CLOUD.lastError,'err');notify('Cloud load failed: '+CLOUD.lastError)}finally{CLOUD.hydrating=false}}
   async function loadCompanies(){if(!cloudOn())return[];const {data,error}=await CLOUD.client.from('company_members').select('company_id,role,company:companies(id,name,gstin)').eq('user_id',CLOUD.user.id).order('created_at',{ascending:true});if(error)throw error;CLOUD.companies=(data||[]).filter(x=>x.company).map(x=>({id:x.company.id,name:x.company.name,gstin:x.company.gstin||'',role:x.role}));if(CLOUD.company&&!CLOUD.companies.some(x=>x.id===CLOUD.company.id))CLOUD.company=null;renderBars();if(!CLOUD.company&&CLOUD.companies.length===1)await loadCompany(CLOUD.companies[0].id);else if(CLOUD.company)await loadCompany(CLOUD.company.id);else if(!CLOUD.companies.length){status('No company assigned — create your first company.','');await cloudCreateCompany()}else status(CLOUD.companies.length+' company(s) available — select one.','ok');return CLOUD.companies}
   async function cloudSignIn(email,password){const {data,error}=await CLOUD.client.auth.signInWithPassword({email,password});if(error)throw error;CLOUD.user=data.user;currentUser=null;sessionStorage.removeItem(SESSION_KEY);await loadCompanies();q('authGate').style.display='none';q('moduleGate').style.display='flex';document.querySelector('header').style.display='none';q('tabs').style.display='none';q('fileBanner').style.display='none';document.querySelectorAll('.tab-panel').forEach(x=>x.style.display='none');if(CLOUD.company){currentUser=CLOUD.company.role==='admin'?'admin':'user';applyRoleUI()}renderBars();showBars()}
   async function createFirstAdmin(){if(!CLOUD.client)return;q('loginError').textContent='';const email=prompt('Admin email address:');if(!email)return;const pw=prompt('Admin password (minimum 8 characters):');if(!pw)return;if(pw.length<8){alert('Password must be at least 8 characters.');return}const cf=prompt('Confirm Admin password:');if(pw!==cf){alert('Passwords do not match.');return}try{const {data,error}=await CLOUD.client.auth.signUp({email:email.trim(),password:pw});if(error)throw error;CLOUD.user=data.user;if(!data.session){notify('Admin account created. Check the Supabase confirmation email if enabled, then log in.');return}await cloudCreateCompany('First Company','');if(CLOUD.company){currentUser='admin';applyRoleUI();q('authGate').style.display='none';q('moduleGate').style.display='flex';document.querySelector('header').style.display='none';q('tabs').style.display='none';q('fileBanner').style.display='none';document.querySelectorAll('.tab-panel').forEach(x=>x.style.display='none');renderBars();showBars()}}catch(e){q('loginError').textContent=e.message||String(e)}}
@@ -2348,39 +2340,10 @@ window.GST_RECOPRO_SUPABASE_CONFIG = { url: "", publishableKey: "" };
   function queueSync(){if(!cloudOn()||!CLOUD.company||CLOUD.hydrating)return;clearTimeout(CLOUD.saveTimer);CLOUD.saveTimer=setTimeout(()=>cloudSyncNow(),450)}
   window.saveDB=function(){if(cloudOn()){updateStorageInfo();queueSync();return}saveLocal();scheduleFileWrite()};
   window.saveIMSDB=function(){if(cloudOn()){updateStorageInfo();queueSync();return}saveIMSLocalOnly();scheduleFileWrite();updateStorageInfo()};
-  window.renderFileBanner=function(){if(cloudOn()){const e=q('fileBanner');if(e){e.className='ok';e.innerHTML='☁ <b>Cloud database active</b> — selected company data is stored in Supabase. GST_Recon_Data.json is not the primary database.'}return}legacyRenderFileBanner()};
+  window.renderFileBanner=function(){if(cloudOn()){const e=q('fileBanner');if(e){e.className='ok';e.innerHTML=''}return}legacyRenderFileBanner()};
   window.login=async function(){if(!CLOUD.enabled)return legacyLogin();const email=(q('cloudLoginEmail')?.value||'').trim(),pw=(q('loginPassword')?.value||'');if(!email){q('loginError').textContent='Enter your Cloud email.';return}if(!pw){q('loginError').textContent='Enter your password.';return}try{await cloudSignIn(email,pw)}catch(e){q('loginError').textContent=e.message||'Cloud login failed.'}};
   window.cloudCreateFirstAdmin=createFirstAdmin;window.cloudCreateCompany=cloudCreateCompany;window.cloudSwitchCompany=cloudSwitchCompany;window.cloudRefreshCompanies=cloudRefreshCompanies;window.cloudSyncNow=cloudSyncNow;
   window.cloudLogout=async function(){return window.logoutApp()};
-
-  // Cloud mode: Supabase authentication is the source of truth for admin-sensitive
-  // actions. Do not ask for the legacy browser-only admin password after a cloud login.
-  // This prevents the old local password hash from blocking legitimate cloud admins.
-  const cloudClosePeriodGuarded = window.closePeriod;
-  const cloudReopenPeriodGuarded = window.reopenPeriod;
-  const cloudEraseDataGuarded = window.eraseData;
-  const cloudRestoreBackupGuarded = window.restoreBackup;
-  window.closePeriod = function(){
-    if(!isAdmin()){notify('Only Admin can close a period.');return}
-    if(typeof _closePeriod==='function') return _closePeriod();
-    return cloudClosePeriodGuarded?.();
-  };
-  window.reopenPeriod = function(){
-    if(!isAdmin()){notify('Only Admin can reopen a period.');return}
-    if(typeof _reopenPeriod==='function') return _reopenPeriod();
-    return cloudReopenPeriodGuarded?.();
-  };
-  window.eraseData = function(scope){
-    if(!isAdmin()){notify('Only Admin can erase data.');return}
-    if(typeof _eraseData==='function') return _eraseData(scope);
-    return cloudEraseDataGuarded?.(scope);
-  };
-  window.restoreBackup = function(evt){
-    if(!isAdmin()){notify('Only Admin can restore a backup.');if(evt)evt.target.value='';return}
-    if(typeof _restoreBackup==='function') return _restoreBackup(evt);
-    return cloudRestoreBackupGuarded?.(evt);
-  };
-
   window.openPasswordDialog=function(){if(!cloudOn())return legacyOpenPassword();if(!CLOUD.user)return;q('passwordTarget').textContent='Change cloud password for '+(CLOUD.user.email||'this account')+'.';const lab=q('currentPassword')?.closest('.auth-field');if(lab)lab.style.display='none';q('newPassword').value='';q('confirmPassword').value='';q('passwordError').textContent='';q('passwordModal').style.display='flex'};
   window.changeMyPassword=async function(){if(!cloudOn())return legacyChangePassword();const nw=q('newPassword').value,cf=q('confirmPassword').value;if(nw.length<8){q('passwordError').textContent='Password must be at least 8 characters.';return}if(nw!==cf){q('passwordError').textContent='Passwords do not match.';return}const {error}=await CLOUD.client.auth.updateUser({password:nw});if(error){q('passwordError').textContent=error.message;return}closePasswordDialog();notify('Cloud password updated.')};
   window.logoutApp=async function(){if(cloudOn()){clearTimeout(CLOUD.saveTimer);if(CLOUD.company&&!CLOUD.syncBusy)await cloudSyncNow();try{await CLOUD.client.auth.signOut()}catch(e){}CLOUD.user=null;CLOUD.company=null;CLOUD.companies=[];CLOUD.revision=0;currentUser=null;DB={twoB:[],books:[],rcm:[],closed:{},manualInel:{}};IMS_DB={records:[],books:[],closed:{}};q('authGate').style.display='flex';q('moduleGate').style.display='none';document.querySelector('header').style.display='none';q('tabs').style.display='none';q('fileBanner').style.display='none';renderBars();showBars();q('loginPassword').value='';q('loginError').textContent='';return}return legacyLogout()};
