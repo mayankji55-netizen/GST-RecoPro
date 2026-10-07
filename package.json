@@ -1,8 +1,8 @@
 {
-  "name": "gst-recopro-cloud",
+  "name": "gst-recopro",
+  "version": "14.0.0-upload-ready",
   "private": true,
-  "type": "module",
-  "dependencies": {
-    "@supabase/supabase-js": "^2.57.0"
+  "scripts": {
+    "validate": "node tools/validate.mjs"
   }
 }
