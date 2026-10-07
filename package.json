@@ -1,8 +1,0 @@
-{
-  "name": "gst-recopro",
-  "version": "14.0.0-upload-ready",
-  "private": true,
-  "scripts": {
-    "validate": "node tools/validate.mjs"
-  }
-}
