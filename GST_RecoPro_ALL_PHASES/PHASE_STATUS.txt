@@ -1,0 +1,9 @@
+V15: COMPLETE REPORT CENTRE — implemented
+- Login fields are blank; password is cleared after login and not persisted by app code.
+- Separate modules/pages preserved.
+- Complete report centre: dashboard, detailed reconciliation, party, invoice, month, GSTIN, matched, mismatch, missing-in-books, missing-in-2B, ITC, IMS, 3B/ITC comparison, duplicates.
+- Excel export from current report.
+- Print / Save as PDF workflow from browser.
+- No artificial record limit.
+- Existing import/reconciliation/IMS logic preserved.
+- GST API / statutory filing modules remain intentionally outside this local report build.
